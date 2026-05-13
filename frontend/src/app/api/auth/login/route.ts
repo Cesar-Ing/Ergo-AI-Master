@@ -23,24 +23,25 @@ export async function POST(request: Request) {
 
     const data = await response.json();
     const token = data.access_token;
-    const user = data.user;
 
     // Configurar cookie httpOnly
     const nextResponse = NextResponse.json({ 
       success: true, 
-      role: user.role, 
-      email: user.email
+      role: data.role, 
+      email: data.email
     });
     
-    nextResponse.cookies.set({
-      name: 'ergoai_token',
-      value: token,
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      path: '/',
-      maxAge: 60 * 60 * 24 // 24 horas
-    });
+    if (token) {
+      nextResponse.cookies.set({
+        name: 'ergoai_token',
+        value: token,
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        path: '/',
+        maxAge: 60 * 60 * 24 // 24 horas
+      });
+    }
 
     return nextResponse;
   } catch (error) {

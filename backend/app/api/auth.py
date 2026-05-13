@@ -17,9 +17,9 @@ class LoginData(BaseModel):
 
 class SocialLoginData(BaseModel):
     email: str
-    name: str
-    provider: str # google o outlook
-    provider_id: str
+    full_name: str
+    provider: str # google o azure-ad
+    provider_id: Optional[str] = "social_id"
 
 class ProfileUpdate(BaseModel):
     name: str
@@ -47,15 +47,12 @@ router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 @router.post("/register", response_model=UserResponse)
 def register(user_in: UserCreate, db: Session = Depends(get_db)):
-    # 1. Verificar si el correo ya existe
     user = db.query(User).filter(User.email == user_in.email).first()
     if user:
         raise HTTPException(status_code=400, detail="El correo ya está registrado")
     
-    # 2. Blindaje: Hashear la contraseña antes de guardar
     hashed_pw = get_password_hash(user_in.password)
     
-    # 3. Crear usuario
     new_user = User(
         email=user_in.email,
         full_name=user_in.full_name,
@@ -111,7 +108,7 @@ def login(login_data: LoginData, db: Session = Depends(get_db)):
         "access_token": access_token
     }
 
-@router.post("/social-login")
+@router.post("/social")
 def social_login(social_data: SocialLoginData, db: Session = Depends(get_db)):
     # 1. Buscar usuario por email
     user = db.query(User).filter(User.email == social_data.email).first()
@@ -121,8 +118,8 @@ def social_login(social_data: SocialLoginData, db: Session = Depends(get_db)):
         # Crear usuario si no existe (Sandbox mode)
         user = User(
             email=social_data.email,
-            full_name=social_data.name,
-            hashed_password="social_auth_no_password", # O una marca especial
+            full_name=social_data.full_name,
+            hashed_password="social_auth_no_password",
             role="user",
             department="General"
         )

@@ -14,6 +14,7 @@ const handler = NextAuth({
       tenantId: process.env.AZURE_AD_TENANT_ID || "",
     }),
   ],
+  secret: process.env.NEXTAUTH_SECRET || "supersecret_nextauth_key_2026",
   callbacks: {
     async signIn({ user, account, profile }) {
       if (!user.email) return false;
@@ -37,7 +38,7 @@ const handler = NextAuth({
         if (response.ok) {
           const data = await response.json();
           // Guardamos el token que FastAPI nos devuelve en el objeto user de NextAuth
-          user.backendToken = data.access_token;
+          (user as any).backendToken = data.access_token;
           return true;
         }
         
@@ -49,8 +50,8 @@ const handler = NextAuth({
     },
     async jwt({ token, user }) {
       // Pasa el token de FastAPI a la sesión JWT de NextAuth
-      if (user && user.backendToken) {
-        token.backendToken = user.backendToken;
+      if (user && (user as any).backendToken) {
+        token.backendToken = (user as any).backendToken;
       }
       return token;
     },
@@ -63,7 +64,7 @@ const handler = NextAuth({
     }
   },
   pages: {
-    signIn: '/login', // Redirige aquí si hay un error
+    signIn: '/login',
     error: '/login',
   },
   session: {

@@ -1,8 +1,9 @@
 "use client";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { signIn, useSession } from "next-auth/react";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -10,6 +11,19 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const { data: session, status } = useSession();
+
+  // Si ya hay una sesión de NextAuth, guardamos el token y redirigimos
+  useEffect(() => {
+    if (status === "authenticated" && session) {
+      const backendToken = (session as any).backendToken;
+      if (backendToken) {
+        localStorage.setItem("ergoai_user_email", session.user?.email || "");
+        localStorage.setItem("ergoai_user_role", "user"); // O el rol que devuelva tu backend
+        router.push("/dashboard");
+      }
+    }
+  }, [status, session, router]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,34 +60,21 @@ export default function LoginPage() {
 
   const handleSocialLogin = async (provider: string) => {
     setLoading(true);
-    setError(`Conectando con ${provider}...`);
+    setError(`Redirigiendo a ${provider}...`);
     
     try {
-      const mockSocialData = {
-        email: provider === "Google" ? "usuario_google@gmail.com" : "usuario_outlook@outlook.com",
-        name: provider === "Google" ? "Usuario Google Demo" : "Usuario Outlook Demo",
-        provider: provider.toLowerCase(),
-        provider_id: `social_${Date.now()}`
-      };
-
-      const res = await fetch("/api/auth/social", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(mockSocialData),
+      // Usamos el sistema profesional de NextAuth
+      const result = await signIn(provider.toLowerCase() === "outlook" ? "azure-ad" : "google", {
+        redirect: false,
+        callbackUrl: "/dashboard",
       });
 
-      const data = await res.json();
-
-      if (res.ok) {
-        localStorage.setItem("ergoai_user_email", data.email);
-        localStorage.setItem("ergoai_user_role", data.role);
-        router.push("/dashboard");
-      } else {
-        setError(data.error || `Error al iniciar sesión con ${provider}`);
+      if (result?.error) {
+        setError(`Error de autenticación con ${provider}: ${result.error}`);
+        setLoading(false);
       }
     } catch (err) {
       setError(`Error al conectar con el servicio de ${provider}.`);
-    } finally {
       setLoading(false);
     }
   };
@@ -97,7 +98,7 @@ export default function LoginPage() {
 
         <form onSubmit={handleLogin} className="space-y-4">
           {error && (
-            <div className={`p-3 border rounded-lg text-sm text-center font-medium ${error.includes('Conectando') ? 'bg-blue-50 border-blue-200 text-blue-600' : 'bg-red-50 border-red-200 text-red-600'}`}>
+            <div className={`p-3 border rounded-lg text-sm text-center font-medium ${error.includes('Redirigiendo') ? 'bg-blue-50 border-blue-200 text-blue-600' : 'bg-red-50 border-red-200 text-red-600'}`}>
               {error}
             </div>
           )}
@@ -133,6 +134,8 @@ export default function LoginPage() {
           </div>
         </form>
 
+        {/* Sección de login social ocultada momentáneamente */}
+        {/* 
         <div className="mt-6">
           <div className="relative mb-6">
             <div className="absolute inset-0 flex items-center">
@@ -176,6 +179,7 @@ export default function LoginPage() {
             </Button>
           </div>
         </div>
+        */}
         
         <div className="mt-8 text-center border-t border-slate-100 pt-6">
           <p className="text-sm font-medium text-slate-600 mb-2">¿No tienes una cuenta?</p>
