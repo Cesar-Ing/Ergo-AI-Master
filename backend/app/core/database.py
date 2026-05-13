@@ -3,8 +3,8 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from .config import settings
 
-# Usaremos PostgreSQL mediante Docker Compose en el puerto 5433
-SQLALCHEMY_DATABASE_URL = "postgresql://ergoai_user:ergoai_password@127.0.0.1:5433/ergoai_db" 
+# Usaremos la URL de la base de datos desde las variables de entorno (Neon en prod, local en dev)
+SQLALCHEMY_DATABASE_URL = settings.DATABASE_URL 
 
 engine = create_engine(
     SQLALCHEMY_DATABASE_URL
