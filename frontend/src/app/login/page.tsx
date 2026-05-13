@@ -66,8 +66,7 @@ export default function LoginPage() {
     
     try {
       // Usamos el sistema profesional de NextAuth
-      const result = await signIn(provider.toLowerCase() === "outlook" ? "azure-ad" : "google", {
-        redirect: false,
+      await signIn(provider.toLowerCase() === "outlook" ? "azure-ad" : "google", {
         callbackUrl: "/dashboard",
       });
 
