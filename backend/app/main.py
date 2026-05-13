@@ -1,5 +1,7 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+import traceback
 from app.api.router import router as api_router
 from app.core.database import engine, Base # <--- Importamos esto
 
@@ -17,6 +19,14 @@ def on_startup():
         Base.metadata.create_all(bind=engine)
     except Exception as e:
         print("Error al conectar con la base de datos en el inicio:", e)
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    # Esto devolverá el error exacto a la consola para que pueda depurarlo desde curl
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Internal Server Error", "error_message": str(exc), "traceback": traceback.format_exc()}
+    )
 
 app.add_middleware(
     CORSMiddleware,
