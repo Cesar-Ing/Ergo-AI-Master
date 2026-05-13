@@ -29,12 +29,19 @@ class ProfileUpdate(BaseModel):
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
 
-def get_current_user_token(token: str = Depends(oauth2_scheme)):
+def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
     try:
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
-        return payload
+        user_id = payload.get("sub")
+        if user_id is None:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token inválido")
     except JWTError:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token inválido")
+        
+    user = db.query(User).filter(User.id == int(user_id)).first()
+    if user is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Usuario no encontrado")
+    return user
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
@@ -146,13 +153,7 @@ def social_login(social_data: SocialLoginData, db: Session = Depends(get_db)):
     }
 
 @router.put("/profile")
-def update_profile(profile_data: ProfileUpdate, token_payload: dict = Depends(get_current_user_token), db: Session = Depends(get_db)):
-    user_id = int(token_payload.get("sub"))
-    user = db.query(User).filter(User.id == user_id).first()
-    
-    if not user:
-        raise HTTPException(status_code=404, detail="Usuario no encontrado")
-        
+def update_profile(profile_data: ProfileUpdate, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     user.full_name = profile_data.name
     user.email = profile_data.email
     user.department = profile_data.department
