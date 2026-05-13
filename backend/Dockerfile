@@ -13,9 +13,10 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-# Exponer el puerto por defecto (Railway lo inyectará)
+# Exponer el puerto
 EXPOSE 8000
 
-# Comando para arrancar la app usando la variable de entorno $PORT
-# Usamos el modo shell (sh -c) para que $PORT se evalúe correctamente
-CMD sh -c "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"
+# Comando para arrancar la app
+# En Railway, si EXPOSE 8000 está definido, el enrutador manda tráfico al 8000, 
+# por lo que debemos asegurarnos de que uvicorn escuche exactamente en ese puerto.
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
