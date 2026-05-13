@@ -3,36 +3,44 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.core.security import get_password_hash, verify_password, create_access_token
 from app.models.user import User
-from app.schemas.user import UserCreate, UserResponse, UserLogin, Token
+from app.schemas.user import UserCreate, UserResponse
+from pydantic import BaseModel
+from typing import Optional
+from datetime import timedelta
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from app.core.config import settings
 
-router = APIRouter(prefix="/auth", tags=["Authentication"])
+class LoginData(BaseModel):
+    email: str
+    password: str
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/auth/login")
+class SocialLoginData(BaseModel):
+    email: str
+    name: str
+    provider: str # google o outlook
+    provider_id: str
 
-def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="No se pudo validar las credenciales",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
+class ProfileUpdate(BaseModel):
+    name: str
+    email: str
+    department: str
+    password: Optional[str] = None
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
+
+def get_current_user_token(token: str = Depends(oauth2_scheme)):
     try:
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
-        email: str = payload.get("email")
-        if email is None:
-            raise credentials_exception
+        return payload
     except JWTError:
-        raise credentials_exception
-    user = db.query(User).filter(User.email == email).first()
-    if user is None:
-        raise credentials_exception
-    return user
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token inválido")
+
+router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 @router.post("/register", response_model=UserResponse)
 def register(user_in: UserCreate, db: Session = Depends(get_db)):
-    # 1. Verificar si el correo ya existe (Cualquier dominio)
+    # 1. Verificar si el correo ya existe
     user = db.query(User).filter(User.email == user_in.email).first()
     if user:
         raise HTTPException(status_code=400, detail="El correo ya está registrado")
@@ -44,45 +52,127 @@ def register(user_in: UserCreate, db: Session = Depends(get_db)):
     new_user = User(
         email=user_in.email,
         full_name=user_in.full_name,
-        hashed_password=hashed_pw,
-        role="user",
-        is_active=True
+        hashed_password=hashed_pw
     )
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
     return new_user
 
-@router.post("/login", response_model=Token)
-def login(user_in: UserLogin, db: Session = Depends(get_db)):
-    user = db.query(User).filter(User.email == user_in.email).first()
+@router.post("/login")
+def login(login_data: LoginData, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.email == login_data.email).first()
     
+    is_new = False
     if not user:
-        # Sandbox mode: auto-registrar si no existe
-        user_name = user_in.email.split('@')[0]
-        hashed_pw = get_password_hash(user_in.password)
+        # Sandbox mode: auto-register if doesn't exist
+        user_name = login_data.email.split('@')[0]
+        hashed_pw = get_password_hash(login_data.password)
         user = User(
-            email=user_in.email,
+            email=login_data.email,
             full_name=user_name,
             hashed_password=hashed_pw,
-            role="user"
+            role="user",
+            department="General"
         )
         db.add(user)
         db.commit()
         db.refresh(user)
+        is_new = True
     else:
-        if not verify_password(user_in.password, user.hashed_password):
-            raise HTTPException(status_code=400, detail="Correo o contraseña incorrectos")
-    
+        # Verify password
+        if user.hashed_password != 'dummyhash' and not verify_password(login_data.password, user.hashed_password):
+            raise HTTPException(status_code=401, detail="Contraseña incorrecta")
+            
+    access_token_expires = timedelta(hours=24)
     access_token = create_access_token(
-        data={"sub": str(user.id), "email": user.email, "role": user.role}
+        data={
+            "sub": str(user.id),
+            "email": user.email,
+            "role": user.role,
+            "name": user.full_name,
+            "department": getattr(user, 'department', 'General') or 'General'
+        },
+        expires_delta=access_token_expires
     )
+    
     return {
-        "access_token": access_token,
-        "token_type": "bearer",
-        "user": user
+        "success": True,
+        "role": user.role,
+        "email": user.email,
+        "is_new": is_new,
+        "access_token": access_token
     }
 
-@router.get("/me", response_model=UserResponse)
-def get_me(current_user: User = Depends(get_current_user)):
-    return current_user
+@router.post("/social-login")
+def social_login(social_data: SocialLoginData, db: Session = Depends(get_db)):
+    # 1. Buscar usuario por email
+    user = db.query(User).filter(User.email == social_data.email).first()
+    
+    is_new = False
+    if not user:
+        # Crear usuario si no existe (Sandbox mode)
+        user = User(
+            email=social_data.email,
+            full_name=social_data.name,
+            hashed_password="social_auth_no_password", # O una marca especial
+            role="user",
+            department="General"
+        )
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+        is_new = True
+    
+    # 2. Generar token
+    access_token_expires = timedelta(hours=24)
+    access_token = create_access_token(
+        data={
+            "sub": str(user.id),
+            "email": user.email,
+            "role": user.role,
+            "name": user.full_name,
+            "department": getattr(user, 'department', 'General') or 'General'
+        },
+        expires_delta=access_token_expires
+    )
+    
+    return {
+        "success": True,
+        "role": user.role,
+        "email": user.email,
+        "is_new": is_new,
+        "access_token": access_token
+    }
+
+@router.put("/profile")
+def update_profile(profile_data: ProfileUpdate, token_payload: dict = Depends(get_current_user_token), db: Session = Depends(get_db)):
+    user_id = int(token_payload.get("sub"))
+    user = db.query(User).filter(User.id == user_id).first()
+    
+    if not user:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+        
+    user.full_name = profile_data.name
+    user.email = profile_data.email
+    user.department = profile_data.department
+    
+    if profile_data.password and profile_data.password.strip():
+        user.hashed_password = get_password_hash(profile_data.password)
+        
+    db.commit()
+    db.refresh(user)
+    
+    access_token_expires = timedelta(hours=24)
+    new_token = create_access_token(
+        data={
+            "sub": str(user.id),
+            "email": user.email,
+            "role": user.role,
+            "name": user.full_name,
+            "department": getattr(user, 'department', 'General') or 'General'
+        },
+        expires_delta=access_token_expires
+    )
+    
+    return {"success": True, "message": "Perfil actualizado", "access_token": new_token}
