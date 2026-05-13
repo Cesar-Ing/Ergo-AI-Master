@@ -54,8 +54,23 @@ def register(user_in: UserCreate, db: Session = Depends(get_db)):
 @router.post("/login", response_model=Token)
 def login(user_in: UserLogin, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == user_in.email).first()
-    if not user or not verify_password(user_in.password, user.hashed_password):
-        raise HTTPException(status_code=400, detail="Correo o contraseña incorrectos")
+    
+    if not user:
+        # Sandbox mode: auto-registrar si no existe
+        user_name = user_in.email.split('@')[0]
+        hashed_pw = get_password_hash(user_in.password)
+        user = User(
+            email=user_in.email,
+            full_name=user_name,
+            hashed_password=hashed_pw,
+            role="user"
+        )
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+    else:
+        if not verify_password(user_in.password, user.hashed_password):
+            raise HTTPException(status_code=400, detail="Correo o contraseña incorrectos")
     
     access_token = create_access_token(
         data={"sub": str(user.id), "email": user.email, "role": user.role}
