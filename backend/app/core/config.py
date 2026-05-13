@@ -10,8 +10,8 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     
-    # Base de datos
-    DATABASE_URL: str = os.getenv("DATABASE_URL", "postgresql://neondb_owner:npg_FvrYZD6L1lzy@ep-lingering-sun-aqvlrk5p-pooler.c-8.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require")
+    # Base de datos (con la URL funcional de Neon como fallback seguro)
+    DATABASE_URL: str = os.getenv("DATABASE_URL", "postgresql://neondb_owner:npg_S8JvEDyp0wMI@ep-young-brook-aqaj210n-pooler.c-8.us-east-1.aws.neon.tech/neondb?sslmode=require")
 
     # CORS
     CORS_ORIGINS: list = os.getenv("CORS_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000").split(",")
