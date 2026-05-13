@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
+import { apiFetch } from "@/lib/api-client";
 
 interface User { id: number; full_name: string; email: string; role: string; company: string; department: string; }
 interface Config { [key: string]: string; }
@@ -17,15 +18,18 @@ export default function AdminPage() {
     setMounted(true);
     const init = async () => {
       try {
-        const [uRes, aRes, cRes] = await Promise.all([
-          fetch('/api/stats/stats/all-accounts'),
-          fetch('/api/stats/stats/global-activity'),
-          fetch('/api/stats/config')
+        const [userData, activityData, configData] = await Promise.all([
+          apiFetch('/api/users'),
+          apiFetch('/api/stats/stats/global-activity'),
+          apiFetch('/api/stats/config')
         ]);
-        if (uRes.ok) setUsers(await uRes.json());
-        if (aRes.ok) setGlobalActivity(await aRes.json());
-        if (cRes.ok) setConfigs(await cRes.json());
-      } catch (e) { console.error("Admin Load Error:", e); }
+        
+        if (userData?.users) setUsers(userData.users);
+        if (activityData) setGlobalActivity(activityData);
+        if (configData) setConfigs(configData);
+      } catch (e) { 
+        console.error("Admin Load Error:", e); 
+      }
     };
     init();
   }, []);
@@ -33,16 +37,16 @@ export default function AdminPage() {
   const saveConfig = async (key: string, value: string) => {
     setIsSaving(true);
     try {
-      const res = await fetch('/api/stats/config', {
+      await apiFetch('/api/stats/config', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ key, value })
       });
-      if (res.ok) {
-        setConfigs(prev => ({ ...prev, [key]: value }));
-      }
-    } catch (e) { alert("Error guardando configuración"); }
-    finally { setIsSaving(false); }
+      setConfigs(prev => ({ ...prev, [key]: value }));
+    } catch (e) { 
+      alert("Error guardando configuración"); 
+    } finally { 
+      setIsSaving(false); 
+    }
   };
 
   const exportReport = () => {

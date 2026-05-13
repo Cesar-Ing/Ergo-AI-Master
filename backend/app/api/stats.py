@@ -62,18 +62,6 @@ def get_users_triage(db: Session = Depends(get_db)):
         print(f"DEBUG: [Triage] ERROR: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.get("/all-accounts")
-def get_all_accounts(db: Session = Depends(get_db)):
-    users = db.query(User).all()
-    return [{
-        "id": u.id,
-        "full_name": u.full_name,
-        "email": u.email,
-        "role": u.role,
-        "company": u.company,
-        "department": u.department
-    } for u in users]
-
 @router.get("/global-activity")
 def get_global_activity(db: Session = Depends(get_db)):
     # Agrupar por fecha y contar usuarios únicos activos

@@ -1,15 +1,7 @@
 import { NextResponse } from 'next/server';
-import { Pool } from 'pg';
 
-const pool = new Pool({
-  user: 'ergoai_user',
-  host: '127.0.0.1',
-  database: 'ergoai_db',
-  password: 'ergoai_password',
-  port: 5433,
-});
+const BACKEND_URL = 'http://localhost:8000';
 
-// GET /api/breaks?userId=2
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const userId = searchParams.get('userId');
@@ -19,41 +11,35 @@ export async function GET(request: Request) {
   }
 
   try {
-    const client = await pool.connect();
-    const result = await client.query(
-      'SELECT id, user_id, start_time, duration_seconds, score, metrics FROM active_breaks WHERE user_id = $1 ORDER BY start_time DESC',
-      [parseInt(userId, 10)]
-    );
-    client.release();
-    return NextResponse.json(result.rows);
+    const response = await fetch(`${BACKEND_URL}/breaks/user/${userId}`);
+    if (!response.ok) {
+        return NextResponse.json({ error: 'Backend Error' }, { status: response.status });
+    }
+    const data = await response.json();
+    return NextResponse.json(data);
   } catch (error) {
-    console.error('[API/breaks GET]', error);
-    return NextResponse.json({ error: 'DB Error' }, { status: 500 });
+    console.error('[API/breaks GET Proxy]', error);
+    return NextResponse.json({ error: 'Connection Failed' }, { status: 500 });
   }
 }
 
-// POST /api/breaks
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { user_id, duration_seconds, score, metrics } = body;
+    
+    const response = await fetch(`${BACKEND_URL}/breaks/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
 
-    if (!user_id || !duration_seconds || score === undefined) {
-      return NextResponse.json({ error: 'Missing fields' }, { status: 400 });
+    if (!response.ok) {
+        return NextResponse.json({ error: 'Backend Error' }, { status: response.status });
     }
-
-    const client = await pool.connect();
-    const result = await client.query(
-      `INSERT INTO active_breaks (user_id, duration_seconds, score, metrics)
-       VALUES ($1, $2, $3, $4)
-       RETURNING id, user_id, start_time, duration_seconds, score, metrics`,
-      [parseInt(user_id, 10), duration_seconds, score, JSON.stringify(metrics || {})]
-    );
-    client.release();
-
-    return NextResponse.json(result.rows[0]);
+    const data = await response.json();
+    return NextResponse.json(data);
   } catch (error) {
-    console.error('[API/breaks POST]', error);
-    return NextResponse.json({ error: 'DB Error', detail: String(error) }, { status: 500 });
+    console.error('[API/breaks POST Proxy]', error);
+    return NextResponse.json({ error: 'Connection Failed' }, { status: 500 });
   }
 }
