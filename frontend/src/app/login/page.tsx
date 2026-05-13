@@ -17,9 +17,11 @@ export default function LoginPage() {
   useEffect(() => {
     if (status === "authenticated" && session) {
       const backendToken = (session as any).backendToken;
+      const role = (session as any).role || "user";
+      
       if (backendToken) {
         localStorage.setItem("ergoai_user_email", session.user?.email || "");
-        localStorage.setItem("ergoai_user_role", "user"); // O el rol que devuelva tu backend
+        localStorage.setItem("ergoai_user_role", role);
         router.push("/dashboard");
       }
     }
@@ -134,8 +136,6 @@ export default function LoginPage() {
           </div>
         </form>
 
-        {/* Sección de login social ocultada momentáneamente */}
-        {/* 
         <div className="mt-6">
           <div className="relative mb-6">
             <div className="absolute inset-0 flex items-center">
@@ -179,7 +179,6 @@ export default function LoginPage() {
             </Button>
           </div>
         </div>
-        */}
         
         <div className="mt-8 text-center border-t border-slate-100 pt-6">
           <p className="text-sm font-medium text-slate-600 mb-2">¿No tienes una cuenta?</p>

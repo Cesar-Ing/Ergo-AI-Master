@@ -37,8 +37,9 @@ const handler = NextAuth({
 
         if (response.ok) {
           const data = await response.json();
-          // Guardamos el token que FastAPI nos devuelve en el objeto user de NextAuth
+          // Guardamos el token y el rol que FastAPI nos devuelve
           (user as any).backendToken = data.access_token;
+          (user as any).role = data.role || "user";
           return true;
         }
         
@@ -49,16 +50,20 @@ const handler = NextAuth({
       }
     },
     async jwt({ token, user }) {
-      // Pasa el token de FastAPI a la sesión JWT de NextAuth
-      if (user && (user as any).backendToken) {
-        token.backendToken = (user as any).backendToken;
+      // Pasa los datos del backend a la sesión JWT de NextAuth
+      if (user) {
+        if ((user as any).backendToken) token.backendToken = (user as any).backendToken;
+        if ((user as any).role) token.role = (user as any).role;
       }
       return token;
     },
     async session({ session, token }) {
-      // Pone el token de FastAPI en la sesión para que el cliente lo use
+      // Pone los datos en la sesión para que el cliente los use
       if (token.backendToken) {
         (session as any).backendToken = token.backendToken;
+      }
+      if (token.role) {
+        (session as any).role = token.role;
       }
       return session;
     }
