@@ -4,10 +4,14 @@ from sqlalchemy.orm import sessionmaker
 from .config import settings
 
 # Usaremos la URL de la base de datos desde las variables de entorno (Neon en prod, local en dev)
-SQLALCHEMY_DATABASE_URL = settings.DATABASE_URL 
+db_url = settings.DATABASE_URL
+if "channel_binding" in db_url:
+    db_url = db_url.replace("&channel_binding=require", "").replace("?channel_binding=require", "")
 
 engine = create_engine(
-    SQLALCHEMY_DATABASE_URL
+    db_url,
+    pool_pre_ping=True,
+    pool_recycle=300
 )
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
