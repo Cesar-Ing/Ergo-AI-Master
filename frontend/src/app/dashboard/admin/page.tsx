@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { apiFetch } from "@/lib/api-client";
+import { DatabaseManager } from "@/components/dashboard/DatabaseManager";
 
 interface User { id: number; full_name: string; email: string; role: string; company: string; department: string; }
 interface Config { [key: string]: string; }
@@ -19,9 +20,9 @@ export default function AdminPage() {
     const init = async () => {
       try {
         const [userData, activityData, configData] = await Promise.all([
-          apiFetch('/api/users'),
-          apiFetch('/api/stats/stats/global-activity'),
-          apiFetch('/api/stats/config')
+          apiFetch('/users'),
+          apiFetch('/stats/global-activity'),
+          apiFetch('/config')
         ]);
         
         if (userData?.users) setUsers(userData.users);
@@ -37,7 +38,7 @@ export default function AdminPage() {
   const saveConfig = async (key: string, value: string) => {
     setIsSaving(true);
     try {
-      await apiFetch('/api/stats/config', {
+      await apiFetch('/config', {
         method: 'POST',
         body: JSON.stringify({ key, value })
       });
@@ -79,9 +80,9 @@ export default function AdminPage() {
       </div>
 
       <div className="flex p-2 bg-slate-200/40 dark:bg-white/5 rounded-3xl w-fit mx-auto border border-white/50 backdrop-blur-xl">
-        {["activity", "users", "calibration"].map(t => (
+        {["activity", "users", "calibration", "database"].map(t => (
           <button key={t} onClick={() => setActiveTab(t)} className={`px-12 py-4 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-500 ${activeTab === t ? "bg-[#0B1B3D] text-white shadow-2xl scale-105" : "text-slate-400 dark:text-blue-200/40 hover:text-slate-800"}`}>
-            {t === 'activity' ? 'Actividad' : t === 'users' ? 'Cuentas' : 'Calibración IA'}
+            {t === 'activity' ? 'Actividad' : t === 'users' ? 'Cuentas' : t === 'calibration' ? 'Calibración IA' : 'Base de Datos'}
           </button>
         ))}
       </div>
@@ -194,6 +195,8 @@ export default function AdminPage() {
            </div>
         </div>
       )}
+
+      {activeTab === "database" && <DatabaseManager />}
     </div>
   );
 }

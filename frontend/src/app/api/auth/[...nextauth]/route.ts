@@ -1,6 +1,7 @@
 import NextAuth from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import AzureADProvider from "next-auth/providers/azure-ad";
+import { cookies } from "next/headers";
 
 const handler = NextAuth({
   providers: [
@@ -23,7 +24,7 @@ const handler = NextAuth({
         // Enviar datos al backend de FastAPI
         const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL || "http://localhost:8000";
         
-        const response = await fetch(`${backendUrl}/auth/social`, {
+        const response = await fetch(`${backendUrl}/auth/social-login`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -40,6 +41,17 @@ const handler = NextAuth({
           // Guardamos el token y el rol que FastAPI nos devuelve
           (user as any).backendToken = data.access_token;
           (user as any).role = data.role || "user";
+          
+          // Establecemos la cookie para el resto del sistema
+          const cookieStore = await cookies();
+          cookieStore.set('ergoai_token', data.access_token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax',
+            path: '/',
+            maxAge: 60 * 60 * 24 // 24 horas
+          });
+          
           return true;
         }
         

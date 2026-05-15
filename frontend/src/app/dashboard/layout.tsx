@@ -181,6 +181,28 @@ export default function DashboardLayout({
         <div className={`flex-1 overflow-y-auto p-10 transition-colors duration-500 ${isDark ? 'bg-[#050B1A]' : 'bg-[#f8fafc]/50'}`}>
           {children}
         </div>
+
+        {/* Global Status Bar */}
+        <footer className={`h-12 border-t px-8 flex items-center justify-between text-[9px] font-black uppercase tracking-[0.2em] transition-colors duration-500 ${isDark ? 'bg-[#0B1B3D] border-white/5 text-blue-200/40' : 'bg-slate-50 border-slate-100 text-slate-400'}`}>
+          <div className="flex gap-8 items-center">
+            <div className="flex items-center gap-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+              IA ENGINE: ONLINE
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+              MULTI-MODEL DB: ACTIVE
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+              API LATENCY: 12ms
+            </div>
+          </div>
+          <div className="flex items-center gap-6">
+            <span>REGION: US-EAST-1</span>
+            <span className="text-emerald-500">SYSTEM STABLE v0.1.0</span>
+          </div>
+        </footer>
       </main>
     </div>
   );

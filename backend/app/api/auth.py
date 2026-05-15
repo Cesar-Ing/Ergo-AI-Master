@@ -18,8 +18,8 @@ class LoginData(BaseModel):
 class SocialLoginData(BaseModel):
     email: str
     full_name: str
-    provider: str # google o azure-ad
-    provider_id: Optional[str] = "social_id"
+    provider: str # google o outlook
+    provider_id: Optional[str] = None
 
 class ProfileUpdate(BaseModel):
     name: str
@@ -67,28 +67,14 @@ def register(user_in: UserCreate, db: Session = Depends(get_db)):
 def login(login_data: LoginData, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == login_data.email).first()
     
-    is_new = False
     if not user:
-        # Sandbox mode: auto-register if doesn't exist
-        user_name = login_data.email.split('@')[0]
-        hashed_pw = get_password_hash(login_data.password)
-        user = User(
-            email=login_data.email,
-            full_name=user_name,
-            hashed_password=hashed_pw,
-            role="user",
-            department="General"
-        )
-        db.add(user)
-        db.commit()
-        db.refresh(user)
-        is_new = True
-    else:
-        # Verify password
-        if user.hashed_password != 'dummyhash' and not verify_password(login_data.password, user.hashed_password):
-            raise HTTPException(status_code=401, detail="Contraseña incorrecta")
+        raise HTTPException(status_code=401, detail="Credenciales inválidas")
+        
+    # Verify password
+    if not verify_password(login_data.password, user.hashed_password):
+        raise HTTPException(status_code=401, detail="Contraseña incorrecta")
             
-    access_token_expires = timedelta(hours=24)
+    access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
         data={
             "sub": str(user.id),
@@ -104,11 +90,10 @@ def login(login_data: LoginData, db: Session = Depends(get_db)):
         "success": True,
         "role": user.role,
         "email": user.email,
-        "is_new": is_new,
         "access_token": access_token
     }
 
-@router.post("/social")
+@router.post("/social-login")
 def social_login(social_data: SocialLoginData, db: Session = Depends(get_db)):
     # 1. Buscar usuario por email
     user = db.query(User).filter(User.email == social_data.email).first()
@@ -119,7 +104,7 @@ def social_login(social_data: SocialLoginData, db: Session = Depends(get_db)):
         user = User(
             email=social_data.email,
             full_name=social_data.full_name,
-            hashed_password="social_auth_no_password",
+            hashed_password="social_auth_no_password", # O una marca especial
             role="user",
             department="General"
         )

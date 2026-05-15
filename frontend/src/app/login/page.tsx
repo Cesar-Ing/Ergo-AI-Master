@@ -69,11 +69,6 @@ export default function LoginPage() {
       await signIn(provider.toLowerCase() === "outlook" ? "azure-ad" : "google", {
         callbackUrl: "/dashboard",
       });
-
-      if (result?.error) {
-        setError(`Error de autenticación con ${provider}: ${result.error}`);
-        setLoading(false);
-      }
     } catch (err) {
       setError(`Error al conectar con el servicio de ${provider}.`);
       setLoading(false);
@@ -151,7 +146,7 @@ export default function LoginPage() {
               variant="outline" 
               disabled={loading}
               className="h-11 border-slate-200 hover:bg-slate-50 hover:text-slate-900 transition-all font-semibold text-slate-700 flex items-center justify-center gap-2"
-              onClick={() => handleSocialLogin("Google")}
+              onClick={() => signIn("google", { callbackUrl: "/dashboard" })}
             >
               <svg className="w-5 h-5" viewBox="0 0 24 24">
                 <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
@@ -178,14 +173,14 @@ export default function LoginPage() {
             </Button>
           </div>
         </div>
-        
+
         <div className="mt-8 text-center border-t border-slate-100 pt-6">
           <p className="text-sm font-medium text-slate-600 mb-2">¿No tienes una cuenta?</p>
           <Link href="/register" className="text-sm font-bold text-emerald-600 hover:text-emerald-700 transition-colors">
             Crea tu cuenta aquí
           </Link>
         </div>
-        
+
         <div className="mt-6 text-center">
           <Link href="/" className="text-sm font-semibold text-slate-500 hover:text-[#0B1B3D] transition-colors">
             ← Regresar al sitio principal
