@@ -87,118 +87,117 @@ function LoginContent() {
     } catch (err) {
       setError(`Error al conectar con el servicio de ${provider}.`);
       setLoading(false);
-    }
-  };
+    }  return (
+    <div className="min-h-screen flex items-center justify-center px-4 relative overflow-hidden font-sans bg-[#050B18]">
+      {/* Fondo con imagen oficial */}
+      <div 
+        className="absolute inset-0 z-0 opacity-40 bg-cover bg-center bg-no-repeat"
+        style={{ backgroundImage: "url('/login-bg.jpg')" }}
+      />
+      
+      {/* Capa de degradado para profundidad */}
+      <div className="absolute inset-0 z-10 bg-gradient-to-b from-[#050B18]/20 via-[#050B18]/60 to-[#050B18]" />
 
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50 px-4 relative overflow-hidden font-sans">
-      <div className="absolute top-0 left-0 w-full h-full overflow-hidden -z-10 pointer-events-none">
-        <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-blue-100 rounded-full blur-[100px]" />
-        <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] bg-emerald-100/50 rounded-full blur-[100px]" />
-      </div>
+      <div className="w-full max-w-md z-20 animate-in fade-in zoom-in-95 duration-700">
+        <div className="bg-white/95 dark:bg-[#0B1B3D]/90 backdrop-blur-xl border border-white/20 rounded-[2.5rem] p-10 shadow-2xl relative overflow-hidden">
+          
+          {/* Logo animado en la parte superior */}
+          <div className="flex justify-center mb-8">
+            <div className="relative group">
+              <div className="absolute -inset-1 bg-gradient-to-r from-emerald-400 to-blue-500 rounded-full blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200"></div>
+              <img 
+                src="/logo.png" 
+                alt="ErgoAI Logo" 
+                className="relative h-20 w-auto object-contain transition-transform duration-500 group-hover:scale-110"
+              />
+            </div>
+          </div>
+          
+          <div className="text-center mb-8">
+            <h1 className="text-3xl font-black text-[#0B1B3D] dark:text-white tracking-tighter mb-2">Bienvenido</h1>
+            <p className="text-slate-500 dark:text-blue-200/60 text-xs font-bold uppercase tracking-widest">Salud Ocupacional Inteligente</p>
+          </div>
 
-      <div className="w-full max-w-md bg-white border border-slate-200 rounded-2xl p-8 shadow-xl relative">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-16 h-16 rounded-2xl bg-[#0B1B3D] flex items-center justify-center font-bold text-2xl text-white shadow-lg border-4 border-white">
-          E
+          <form onSubmit={handleLogin} className="space-y-5">
+            {error && (
+              <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-2xl text-xs text-red-500 text-center font-black uppercase tracking-widest animate-shake">
+                {error}
+              </div>
+            )}
+            
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-slate-400 dark:text-blue-200/40 uppercase tracking-[0.2em] px-2">Email Corporativo</label>
+              <input 
+                type="email" 
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="usuario@ergoai.com" 
+                required
+                className="w-full h-14 px-6 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 text-[#0B1B3D] dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all font-bold text-sm"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-slate-400 dark:text-blue-200/40 uppercase tracking-[0.2em] px-2">Contraseña</label>
+              <input 
+                type="password" 
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••" 
+                required
+                className="w-full h-14 px-6 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 text-[#0B1B3D] dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all font-bold text-sm"
+              />
+            </div>
+
+            <div className="pt-4">
+              <Button 
+                type="submit" 
+                disabled={loading} 
+                className="w-full h-14 bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-500 hover:to-teal-600 text-white font-black text-sm uppercase tracking-widest shadow-xl shadow-emerald-900/20 rounded-2xl transition-all active:scale-95"
+              >
+                {loading ? "Iniciando..." : "Entrar al Portal"}
+              </Button>
+            </div>
+          </form>
+
+          <div className="mt-8">
+            <div className="relative mb-6">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-slate-100 dark:border-white/5"></div>
+              </div>
+              <div className="relative flex justify-center text-[10px] font-black uppercase tracking-widest">
+                <span className="px-4 bg-white dark:bg-[#0B1B3D] text-slate-400 dark:text-blue-200/20">Acceso Rápido</span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <button 
+                onClick={() => signIn("google", { callbackUrl: "/dashboard" })}
+                className="flex items-center justify-center gap-3 h-12 bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 rounded-xl hover:bg-slate-100 dark:hover:bg-white/10 transition-all"
+              >
+                <svg className="w-5 h-5" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+                <span className="text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-blue-200/60">Google</span>
+              </button>
+              <button 
+                onClick={() => handleSocialLogin("Outlook")}
+                className="flex items-center justify-center gap-3 h-12 bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 rounded-xl hover:bg-slate-100 dark:hover:bg-white/10 transition-all"
+              >
+                <svg className="w-5 h-5" viewBox="0 0 23 23"><path fill="#f35325" d="M1 1h10v10H1z"/><path fill="#81bc06" d="M12 1h10v10H12z"/><path fill="#05a6f0" d="M1 12h10v10H1z"/><path fill="#ffba08" d="M12 12h10v10H12z"/></svg>
+                <span className="text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-blue-200/60">Outlook</span>
+              </button>
+            </div>
+          </div>
+
+          <div className="mt-10 text-center">
+            <Link href="/register" className="text-[10px] font-black text-emerald-500 hover:text-emerald-400 uppercase tracking-widest transition-colors">
+              Crear una nueva cuenta
+            </Link>
+          </div>
         </div>
         
-        <div className="text-center mt-8 mb-8">
-          <h1 className="text-2xl font-bold text-[#0B1B3D] mb-2">Acceso a ErgoIA</h1>
-          <p className="text-slate-500 text-sm font-medium">Portal de salud laboral. Ingresa tus credenciales.</p>
-        </div>
-
-        <form onSubmit={handleLogin} className="space-y-4">
-          {error && (
-            <div className={`p-3 border rounded-lg text-sm text-center font-medium ${error.includes('Redirigiendo') || error.includes('comunicar') ? 'bg-blue-50 border-blue-200 text-blue-600' : 'bg-red-50 border-red-200 text-red-600'}`}>
-              {error}
-            </div>
-          )}
-          <div className="space-y-2">
-            <label className="text-sm font-bold text-slate-700">Correo Electrónico Corporativo</label>
-            <input 
-              type="email" 
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="nombre@empresa.com" 
-              required
-              className="w-full h-11 px-4 rounded-lg bg-slate-50 border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-all font-medium"
-            />
-          </div>
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <label className="text-sm font-bold text-slate-700">Contraseña Segura</label>
-            </div>
-            <input 
-              type="password" 
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••" 
-              required
-              className="w-full h-11 px-4 rounded-lg bg-slate-50 border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-all font-medium"
-            />
-          </div>
-
-          <div className="pt-4">
-            <Button type="submit" disabled={loading} className="w-full h-12 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-base shadow-md disabled:opacity-50 rounded-lg">
-              {loading ? "Validando..." : "Ingresar al Portal"}
-            </Button>
-          </div>
-        </form>
-
-        <div className="mt-6">
-          <div className="relative mb-6">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-slate-200"></div>
-            </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-white text-slate-500 font-medium">O continuar con</span>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <Button 
-              type="button"
-              variant="outline" 
-              disabled={loading}
-              className="h-11 border-slate-200 hover:bg-slate-50 hover:text-slate-900 transition-all font-semibold text-slate-700 flex items-center justify-center gap-2"
-              onClick={() => signIn("google", { callbackUrl: "/dashboard" })}
-            >
-              <svg className="w-5 h-5" viewBox="0 0 24 24">
-                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
-                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" />
-                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
-              </svg>
-              Google
-            </Button>
-            <Button 
-              type="button"
-              variant="outline" 
-              disabled={loading}
-              className="h-11 border-slate-200 hover:bg-slate-50 hover:text-slate-900 transition-all font-semibold text-slate-700 flex items-center justify-center gap-2"
-              onClick={() => handleSocialLogin("Outlook")}
-            >
-              <svg className="w-5 h-5" viewBox="0 0 23 23">
-                <path fill="#f35325" d="M1 1h10v10H1z" />
-                <path fill="#81bc06" d="M12 1h10v10H12z" />
-                <path fill="#05a6f0" d="M1 12h10v10H1z" />
-                <path fill="#ffba08" d="M12 12h10v10H12z" />
-              </svg>
-              Outlook
-            </Button>
-          </div>
-        </div>
-
-        <div className="mt-8 text-center border-t border-slate-100 pt-6">
-          <p className="text-sm font-medium text-slate-600 mb-2">¿No tienes una cuenta?</p>
-          <Link href="/register" className="text-sm font-bold text-emerald-600 hover:text-emerald-700 transition-colors">
-            Crea tu cuenta aquí
-          </Link>
-        </div>
-
-        <div className="mt-6 text-center">
-          <Link href="/" className="text-sm font-semibold text-slate-500 hover:text-[#0B1B3D] transition-colors">
-            ← Regresar al sitio principal
+        <div className="mt-8 text-center">
+          <Link href="/" className="text-[10px] font-black text-white/20 hover:text-white/40 uppercase tracking-widest transition-colors">
+            ← Volver al inicio
           </Link>
         </div>
       </div>
