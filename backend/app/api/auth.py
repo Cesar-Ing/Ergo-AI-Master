@@ -100,18 +100,25 @@ def social_login(social_data: SocialLoginData, db: Session = Depends(get_db)):
     
     is_new = False
     if not user:
-        # Crear usuario si no existe (Sandbox mode)
+        # Determinar rol basado en el correo (Tu correo será ADMIN)
+        assigned_role = "admin" if social_data.email == "camachoroman04@gmail.com" else "user"
+        
         user = User(
             email=social_data.email,
             full_name=social_data.full_name,
-            hashed_password="social_auth_no_password", # O una marca especial
-            role="user",
+            hashed_password="social_auth_no_password",
+            role=assigned_role,
             department="General"
         )
         db.add(user)
-        db.commit()
-        db.refresh(user)
         is_new = True
+    else:
+        # Si el usuario ya existe pero es tu correo, nos aseguramos de que sea admin
+        if social_data.email == "camachoroman04@gmail.com":
+            user.role = "admin"
+    
+    db.commit()
+    db.refresh(user)
     
     # 2. Generar token
     access_token_expires = timedelta(hours=24)
