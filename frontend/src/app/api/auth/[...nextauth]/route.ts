@@ -21,9 +21,11 @@ const handler = NextAuth({
       if (!user.email) return false;
 
       try {
-        // Enviar datos al backend de FastAPI
-        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL || "http://localhost:8000";
+        const backendUrl = process.env.BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
         
+        // Mapear el nombre del proveedor para el backend
+        const providerName = account?.provider === "azure-ad" ? "outlook" : account?.provider || "unknown";
+
         const response = await fetch(`${backendUrl}/auth/social-login`, {
           method: "POST",
           headers: {
@@ -31,30 +33,29 @@ const handler = NextAuth({
           },
           body: JSON.stringify({
             email: user.email,
-            full_name: user.name || "Usuario OAuth",
-            provider: account?.provider || "unknown"
+            full_name: user.name || profile?.name || "Usuario Outlook",
+            provider: providerName
           }),
         });
 
         if (response.ok) {
           const data = await response.json();
-          // Guardamos el token y el rol que FastAPI nos devuelve
           (user as any).backendToken = data.access_token;
           (user as any).role = data.role || "user";
           
-          // Establecemos la cookie para el resto del sistema
           const cookieStore = await cookies();
           cookieStore.set('ergoai_token', data.access_token, {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
             sameSite: 'lax',
             path: '/',
-            maxAge: 60 * 60 * 24 // 24 horas
+            maxAge: 60 * 60 * 24 
           });
           
           return true;
         }
         
+        console.error("Backend rechazó el login social:", await response.text());
         return false;
       } catch (error) {
         console.error("Error crítico conectando con el backend durante OAuth:", error);
