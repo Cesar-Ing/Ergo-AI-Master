@@ -28,7 +28,8 @@ export async function POST(request: Request) {
     const nextResponse = NextResponse.json({ 
       success: true, 
       role: data.role, 
-      email: data.email
+      email: data.email,
+      token: token
     });
     
     if (token) {

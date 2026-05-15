@@ -33,6 +33,7 @@ function LoginContent() {
       const role = (session as any).role || "user";
       
       if (backendToken) {
+        localStorage.setItem("ergoai_token", backendToken);
         localStorage.setItem("ergoai_user_email", session.user?.email || "");
         localStorage.setItem("ergoai_user_role", role);
         router.push("/dashboard");
@@ -60,6 +61,7 @@ function LoginContent() {
       const data = await res.json();
 
       if (res.ok) {
+        localStorage.setItem("ergoai_token", data.token);
         localStorage.setItem("ergoai_user_email", data.email);
         localStorage.setItem("ergoai_user_role", data.role);
         router.push("/dashboard");
