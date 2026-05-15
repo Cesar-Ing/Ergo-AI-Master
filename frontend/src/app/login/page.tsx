@@ -103,7 +103,7 @@ function LoginContent() {
         </div>
         
         <div className="text-center mt-8 mb-8">
-          <h1 className="text-2xl font-bold text-[#0B1B3D] mb-2">Acceso a ErgoAI</h1>
+          <h1 className="text-2xl font-bold text-[#0B1B3D] mb-2">Acceso a ErgoIA</h1>
           <p className="text-slate-500 text-sm font-medium">Portal de salud laboral. Ingresa tus credenciales.</p>
         </div>
 

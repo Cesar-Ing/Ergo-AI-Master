@@ -187,7 +187,7 @@ export default function AdminPage() {
 
       <div className="flex justify-between items-center bg-white dark:bg-[#0B1B3D]/50 p-10 rounded-[3.5rem] shadow-xl border border-slate-100 dark:border-white/5">
         <div>
-          <h1 className="text-5xl font-black text-[#0B1B3D] dark:text-white tracking-tighter">Panel de Control ErgoAI</h1>
+          <h1 className="text-5xl font-black text-[#0B1B3D] dark:text-white tracking-tighter">Panel de Control ErgoIA</h1>
           <p className="text-slate-400 dark:text-blue-200/40 font-bold mt-2 text-lg">Gestión de Infraestructura y Umbrales Biomecánicos.</p>
           <div className="flex gap-4 mt-6">
             <Button onClick={exportReport} className="bg-[#0B1B3D] text-white font-black px-6 py-2 rounded-xl text-xs">
@@ -323,7 +323,7 @@ export default function AdminPage() {
 
                  <div className="p-8 bg-white/5 rounded-3xl border border-white/10 backdrop-blur-xl">
                     <p className="text-xs font-bold leading-relaxed opacity-70">
-                       Los cambios realizados aquí afectan globalmente la precisión del cálculo del Score en tiempo real para todos los usuarios de la red ErgoAI.
+                       Los cambios realizados aquí afectan globalmente la precisión del cálculo del Score en tiempo real para todos los usuarios de la red ErgoIA.
                     </p>
                  </div>
               </div>

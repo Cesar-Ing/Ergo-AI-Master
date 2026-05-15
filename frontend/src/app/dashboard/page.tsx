@@ -463,7 +463,7 @@ export default function DashboardPage() {
                    <div className="w-24 h-24 rounded-[2.5rem] bg-emerald-500/10 flex items-center justify-center text-5xl border border-emerald-500/20 shadow-inner">👤</div>
                    <div>
                       <h3 className="text-4xl font-black text-[#0B1B3D] dark:text-white tracking-tighter">Mi Perfil</h3>
-                      <p className="text-slate-400 dark:text-blue-200/40 font-bold uppercase text-[10px] tracking-[0.3em] mt-2">Identidad ErgoAI</p>
+                      <p className="text-slate-400 dark:text-blue-200/40 font-bold uppercase text-[10px] tracking-[0.3em] mt-2">Identidad ErgoIA</p>
                    </div>
                 </div>
                 <div className="space-y-8">
@@ -498,7 +498,7 @@ export default function DashboardPage() {
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-[#0B1B3D]/80 backdrop-blur-md animate-in fade-in duration-500">
           <div className="bg-white dark:bg-[#0B1B3D] w-full max-w-lg rounded-[4rem] p-16 text-center border border-white/10 animate-in zoom-in duration-500 shadow-[0_0_80px_rgba(16,185,129,0.3)]">
              <div className="text-8xl font-black text-emerald-500 mb-4 tracking-tighter">{lastSessionData.score}%</div>
-             <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em] mb-12">Calificación ErgoAI</p>
+             <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em] mb-12">Calificación ErgoIA</p>
              <h2 className="text-4xl font-black text-[#0B1B3D] dark:text-white mb-8 tracking-tight">¡Sesión Exitosa!</h2>
              <p className="text-sm font-bold text-slate-500 dark:text-blue-200/60 leading-relaxed mb-12 max-w-xs mx-auto">{lastSessionData.suggestion}</p>
              <Button onClick={() => setShowResultModal(false)} className="w-full h-18 bg-emerald-600 text-white font-black text-lg rounded-[2rem] shadow-xl hover:scale-105 transition-all">GENIAL</Button>
@@ -522,7 +522,7 @@ export default function DashboardPage() {
                    <div className="w-14 h-14 rounded-full bg-slate-100 dark:bg-white/10 flex items-center justify-center text-3xl">👤</div>
                    <div>
                       <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Emitido por</p>
-                      <p className="text-sm font-bold text-indigo-600">Especialista ErgoAI</p>
+                      <p className="text-sm font-bold text-indigo-600">Especialista ErgoIA</p>
                    </div>
                 </div>
                 <Button onClick={() => setSelectedPrescription(null)} className="w-full h-18 bg-[#0B1B3D] dark:bg-white dark:text-[#0B1B3D] text-white font-black text-lg rounded-[2rem] shadow-xl hover:scale-105 transition-all">ENTENDIDO</Button>

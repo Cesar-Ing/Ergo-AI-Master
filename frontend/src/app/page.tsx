@@ -17,7 +17,7 @@ export default function Home() {
             E
           </div>
           <span className="text-3xl font-black tracking-tighter text-white">
-            Ergo<span className="text-emerald-500">AI</span>
+            Ergo<span className="text-emerald-500">IA</span>
           </span>
         </div>
         
@@ -55,7 +55,7 @@ export default function Home() {
         </h1>
         
         <p className="text-xl md:text-2xl text-blue-200/40 max-w-3xl mx-auto mb-16 leading-relaxed font-bold tracking-tight">
-          ErgoAI transforma cualquier cámara en un laboratorio de ergonomía clínica. <br className="hidden md:block" />
+          ErgoIA transforma cualquier cámara en un laboratorio de ergonomía clínica. <br className="hidden md:block" />
           Sin sensores, sin cables, 100% privacidad garantizada.
         </p>
 
@@ -91,7 +91,7 @@ export default function Home() {
 
       <footer className="px-12 py-12 border-t border-white/5 bg-black/20">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8 text-[10px] font-black uppercase tracking-widest text-blue-200/20">
-          <p>© 2026 ErgoAI Systems. Todos los derechos reservados.</p>
+          <p>© 2026 ErgoIA Systems. Todos los derechos reservados.</p>
           <div className="flex gap-12">
             <Link href="#" className="hover:text-white transition-colors">Privacidad</Link>
             <Link href="#" className="hover:text-white transition-colors">Términos</Link>

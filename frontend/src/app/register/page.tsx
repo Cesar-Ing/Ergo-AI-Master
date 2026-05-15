@@ -75,7 +75,7 @@ export default function RegisterPage() {
         
         <div className="text-center mt-8 mb-8">
           <h1 className="text-2xl font-bold text-[#0B1B3D] mb-2">Crear Cuenta</h1>
-          <p className="text-slate-500 text-sm font-medium">Únete a ErgoAI y mejora tu salud laboral.</p>
+          <p className="text-slate-500 text-sm font-medium">Únete a ErgoIA y mejora tu salud laboral.</p>
         </div>
 
         <form onSubmit={handleRegister} className="space-y-4">

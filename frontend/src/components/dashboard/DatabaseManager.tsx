@@ -32,7 +32,7 @@ export function DatabaseManager() {
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-3xl font-black text-[#0B1B3D] dark:text-white tracking-tighter">Motor Multi-Modelo</h2>
-          <p className="text-slate-400 dark:text-blue-200/40 text-xs font-bold uppercase tracking-widest mt-1">Gestión Unificada de Datos ErgoAI</p>
+          <p className="text-slate-400 dark:text-blue-200/40 text-xs font-bold uppercase tracking-widest mt-1">Gestión Unificada de Datos ErgoIA</p>
         </div>
         <div className="flex gap-2 bg-slate-100 dark:bg-white/5 p-2 rounded-2xl">
           {(['relational', 'document', 'graph', 'object'] as const).map(p => (
