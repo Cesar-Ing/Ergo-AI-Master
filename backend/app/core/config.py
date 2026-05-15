@@ -14,13 +14,13 @@ class Settings(BaseSettings):
     DATABASE_URL: str = os.getenv("DATABASE_URL", "postgresql://user:pass@localhost:5432/dbname")
 
     # CORS
-    CORS_ORIGINS: str = "http://localhost:3000,http://127.0.0.1:3000"
+    CORS_ORIGINS: str = os.getenv("CORS_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000")
 
     @property
     def cors_origins_list(self) -> list[str]:
-        # Si ya es una lista, la devuelve; si es string, la separa
-        if isinstance(self.CORS_ORIGINS, list):
-            return self.CORS_ORIGINS
+        # Si la variable viene vacía o es *, permitimos todo (útil para debug)
+        if self.CORS_ORIGINS == "*":
+            return ["*"]
         return [origin.strip() for origin in self.CORS_ORIGINS.split(",") if origin.strip()]
 
     class Config:

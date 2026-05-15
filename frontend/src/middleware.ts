@@ -2,8 +2,8 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { jwtVerify } from 'jose';
 
-// Debe coincidir con la clave secreta del login
-const JWT_SECRET = new TextEncoder().encode('supersecretkey_ergoai_2026_secure');
+// Clave secreta para verificar los tokens
+const JWT_SECRET = new TextEncoder().encode(process.env.SECRET_KEY || 'supersecretkey_ergoai_2026_secure');
 
 export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
@@ -21,8 +21,8 @@ export async function middleware(request: NextRequest) {
   }
 
   try {
-    // Verificar token
-    const { payload } = await jwtVerify(token, JWT_SECRET);
+    // Verificar token con el algoritmo explícito HS256
+    const { payload } = await jwtVerify(token, JWT_SECRET, { algorithms: ['HS256'] });
     const role = payload.role as string;
 
     // Control de acceso por roles

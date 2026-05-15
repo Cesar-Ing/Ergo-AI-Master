@@ -57,7 +57,7 @@ const handler = NextAuth({
         
         return false;
       } catch (error) {
-        console.error("Error connecting to backend during OAuth:", error);
+        console.error("Error crítico conectando con el backend durante OAuth:", error);
         return false;
       }
     },

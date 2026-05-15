@@ -1,17 +1,30 @@
 "use client";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { signIn, useSession } from "next-auth/react";
 
-export default function LoginPage() {
+function LoginContent() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { data: session, status } = useSession();
+
+  // Detectar errores de NextAuth en la URL
+  useEffect(() => {
+    const authError = searchParams.get("error");
+    if (authError) {
+      if (authError === "OAuthCallback") {
+        setError("Error al comunicar con el servidor de autenticación. Verifica que el backend esté en línea.");
+      } else {
+        setError(`Error de autenticación: ${authError}`);
+      }
+    }
+  }, [searchParams]);
 
   // Si ya hay una sesión de NextAuth, guardamos el token y redirigimos
   useEffect(() => {
@@ -94,7 +107,7 @@ export default function LoginPage() {
 
         <form onSubmit={handleLogin} className="space-y-4">
           {error && (
-            <div className={`p-3 border rounded-lg text-sm text-center font-medium ${error.includes('Redirigiendo') ? 'bg-blue-50 border-blue-200 text-blue-600' : 'bg-red-50 border-red-200 text-red-600'}`}>
+            <div className={`p-3 border rounded-lg text-sm text-center font-medium ${error.includes('Redirigiendo') || error.includes('comunicar') ? 'bg-blue-50 border-blue-200 text-blue-600' : 'bg-red-50 border-red-200 text-red-600'}`}>
               {error}
             </div>
           )}
@@ -188,5 +201,13 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div>Cargando...</div>}>
+      <LoginContent />
+    </Suspense>
   );
 }
