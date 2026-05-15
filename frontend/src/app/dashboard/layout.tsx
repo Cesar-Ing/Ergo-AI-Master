@@ -117,6 +117,11 @@ export default function DashboardLayout({
       {/* Sidebar - Siempre oscuro por diseño premium */}
       <aside className="w-80 bg-[#0B1B3D] text-white flex flex-col shadow-2xl relative z-30">
         <div className="py-12 px-10 flex flex-col items-center border-b border-white/5 bg-gradient-to-b from-[#0B1B3D] to-[#08132B]">
+          {/* Logo Corporativo */}
+          <div className="mb-10 hover:scale-110 transition-transform duration-500">
+            <img src="/min.png" alt="ErgoAI Icon" className="h-12 w-auto" />
+          </div>
+
           <div className="relative group mb-6">
             <div className="absolute -inset-2 bg-gradient-to-r from-emerald-400 to-blue-400 rounded-[2.5rem] blur opacity-40 group-hover:opacity-70 transition duration-1000 animate-pulse"></div>
             <div className="relative w-28 h-28 rounded-[2rem] bg-[#0B1B3D] border border-white/20 flex items-center justify-center text-5xl font-black text-white overflow-hidden shadow-[0_0_40px_rgba(16,185,129,0.2)] transition-transform group-hover:scale-105 duration-500">

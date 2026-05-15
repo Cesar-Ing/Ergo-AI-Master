@@ -48,11 +48,11 @@ export default function RegisterPage() {
       const loginData = await loginRes.json();
 
       if (loginRes.ok) {
+        localStorage.setItem("ergoai_token", loginData.token);
         localStorage.setItem("ergoai_user_email", loginData.email);
         localStorage.setItem("ergoai_user_role", loginData.role);
         router.push("/dashboard");
       } else {
-        // If auto-login fails, just redirect to login page
         router.push("/login?registered=true");
       }
     } catch (err) {
@@ -62,78 +62,100 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50 px-4 relative overflow-hidden font-sans">
-      <div className="absolute top-0 left-0 w-full h-full overflow-hidden -z-10 pointer-events-none">
-        <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-blue-100 rounded-full blur-[100px]" />
-        <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] bg-emerald-100/50 rounded-full blur-[100px]" />
-      </div>
+    <div className="min-h-screen flex items-center justify-center px-4 relative overflow-hidden font-sans bg-[#050B18]">
+      {/* Fondo con imagen oficial */}
+      <div 
+        className="absolute inset-0 z-0 opacity-40 bg-cover bg-center bg-no-repeat"
+        style={{ backgroundImage: "url('/login-bg.jpg')" }}
+      />
+      
+      {/* Capa de degradado */}
+      <div className="absolute inset-0 z-10 bg-gradient-to-b from-[#050B18]/20 via-[#050B18]/60 to-[#050B18]" />
 
-      <div className="w-full max-w-md bg-white border border-slate-200 rounded-2xl p-8 shadow-xl relative">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-16 h-16 rounded-2xl bg-[#0B1B3D] flex items-center justify-center font-bold text-2xl text-white shadow-lg border-4 border-white">
-          E
-        </div>
-        
-        <div className="text-center mt-8 mb-8">
-          <h1 className="text-2xl font-bold text-[#0B1B3D] mb-2">Crear Cuenta</h1>
-          <p className="text-slate-500 text-sm font-medium">Únete a ErgoIA y mejora tu salud laboral.</p>
-        </div>
-
-        <form onSubmit={handleRegister} className="space-y-4">
-          {error && (
-            <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm text-center font-medium">
-              {error}
-            </div>
-          )}
+      <div className="w-full max-w-md z-20 animate-in fade-in zoom-in-95 duration-700">
+        <div className="bg-white/95 dark:bg-[#0B1B3D]/90 backdrop-blur-xl border border-white/20 rounded-[2.5rem] p-10 shadow-2xl relative overflow-hidden">
           
-          <div className="space-y-2">
-            <label className="text-sm font-bold text-slate-700">Nombre Completo</label>
-            <input 
-              type="text" 
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
-              placeholder="Juan Pérez" 
-              required
-              className="w-full h-11 px-4 rounded-lg bg-slate-50 border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-all font-medium"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-sm font-bold text-slate-700">Correo Electrónico</label>
-            <input 
-              type="email" 
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="nombre@empresa.com" 
-              required
-              className="w-full h-11 px-4 rounded-lg bg-slate-50 border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-all font-medium"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <label className="text-sm font-bold text-slate-700">Contraseña Segura</label>
+          <div className="flex justify-center mb-8">
+            <div className="relative group">
+              <div className="absolute -inset-1 bg-gradient-to-r from-emerald-400 to-blue-500 rounded-full blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200"></div>
+              <img 
+                src="/logo.png" 
+                alt="ErgoAI Logo" 
+                className="relative h-16 w-auto object-contain transition-transform duration-500 group-hover:scale-110"
+              />
             </div>
-            <input 
-              type="password" 
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••" 
-              required
-              className="w-full h-11 px-4 rounded-lg bg-slate-50 border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-all font-medium"
-            />
+          </div>
+          
+          <div className="text-center mb-8">
+            <h1 className="text-3xl font-black text-[#0B1B3D] dark:text-white tracking-tighter mb-2">Crear Cuenta</h1>
+            <p className="text-slate-500 dark:text-blue-200/60 text-xs font-bold uppercase tracking-widest">Únete a la salud inteligente</p>
           </div>
 
-          <div className="pt-4">
-            <Button type="submit" disabled={loading} className="w-full h-12 bg-[#0B1B3D] hover:bg-[#1a2f5c] text-white font-bold text-base shadow-md disabled:opacity-50 rounded-lg">
-              {loading ? "Registrando..." : "Crear mi cuenta"}
-            </Button>
+          <form onSubmit={handleRegister} className="space-y-4">
+            {error && (
+              <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-2xl text-xs text-red-500 text-center font-black uppercase tracking-widest">
+                {error}
+              </div>
+            )}
+            
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-slate-400 dark:text-blue-200/40 uppercase tracking-widest px-2">Nombre Completo</label>
+              <input 
+                type="text" 
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                placeholder="Juan Perez" 
+                required
+                className="w-full h-12 px-6 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 text-[#0B1B3D] dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all font-bold text-sm"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-slate-400 dark:text-blue-200/40 uppercase tracking-widest px-2">Email Corporativo</label>
+              <input 
+                type="email" 
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="usuario@ergoai.com" 
+                required
+                className="w-full h-12 px-6 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 text-[#0B1B3D] dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all font-bold text-sm"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-slate-400 dark:text-blue-200/40 uppercase tracking-widest px-2">Contraseña</label>
+              <input 
+                type="password" 
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••" 
+                required
+                className="w-full h-12 px-6 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 text-[#0B1B3D] dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all font-bold text-sm"
+              />
+            </div>
+
+            <div className="pt-4">
+              <Button 
+                type="submit" 
+                disabled={loading} 
+                className="w-full h-14 bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-500 hover:to-teal-600 text-white font-black text-sm uppercase tracking-widest shadow-xl rounded-2xl transition-all active:scale-95"
+              >
+                {loading ? "Creando..." : "Registrar Cuenta"}
+              </Button>
+            </div>
+          </form>
+
+          <div className="mt-8 text-center border-t border-slate-100 dark:border-white/5 pt-6">
+            <p className="text-xs font-bold text-slate-400 mb-2">¿Ya tienes cuenta?</p>
+            <Link href="/login" className="text-xs font-black text-emerald-500 hover:text-emerald-400 uppercase tracking-widest transition-colors">
+              Inicia sesión aquí
+            </Link>
           </div>
-        </form>
+        </div>
         
         <div className="mt-8 text-center">
-          <p className="text-sm font-medium text-slate-600 mb-2">¿Ya tienes una cuenta?</p>
-          <Link href="/login" className="text-sm font-bold text-emerald-600 hover:text-emerald-700 transition-colors">
-            Inicia sesión aquí
+          <Link href="/" className="text-[10px] font-black text-white/20 hover:text-white/40 uppercase tracking-widest transition-colors">
+            ← Volver al inicio
           </Link>
         </div>
       </div>

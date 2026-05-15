@@ -13,8 +13,8 @@ export default function Home() {
       {/* Header */}
       <header className="flex items-center justify-between px-12 py-8 w-full max-w-7xl mx-auto z-50">
         <div className="flex items-center gap-4 group cursor-pointer">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-400 flex items-center justify-center font-black text-white shadow-[0_0_20px_rgba(16,185,129,0.4)] group-hover:scale-110 transition-transform">
-            E
+          <div className="w-12 h-12 rounded-2xl overflow-hidden shadow-[0_0_20px_rgba(16,185,129,0.4)] group-hover:scale-110 transition-transform">
+            <img src="/min.png" alt="Logo" className="w-full h-full object-cover" />
           </div>
           <span className="text-3xl font-black tracking-tighter text-white">
             Ergo<span className="text-emerald-500">IA</span>
