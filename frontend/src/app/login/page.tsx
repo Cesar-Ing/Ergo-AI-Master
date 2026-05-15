@@ -85,9 +85,10 @@ function LoginContent() {
         callbackUrl: "/dashboard",
       });
     } catch (err) {
-      setError(`Error al conectar con el servicio de ${provider}.`);
-      setLoading(false);
-    }  return (
+    }
+  };
+
+  return (
     <div className="min-h-screen flex items-center justify-center px-4 relative overflow-hidden font-sans bg-[#050B18]">
       {/* Fondo con imagen oficial */}
       <div 
