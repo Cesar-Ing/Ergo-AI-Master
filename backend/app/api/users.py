@@ -32,23 +32,55 @@ def update_me(user_in: UserUpdate, db: Session = Depends(get_db), current_user: 
     db.refresh(current_user)
     return current_user
 
-@router.get("/", response_model=List[UserResponse])
+@router.get("/")
 def list_users(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     # Solo administradores pueden ver todos los usuarios
     if current_user.role != "admin":
         raise HTTPException(status_code=403, detail="No tienes permisos para esta acción")
-    return db.query(User).order_by(User.id.desc()).all()
+    users = db.query(User).order_by(User.id.desc()).all()
+    return {"users": users}
 
-@router.patch("/{email}")
-def update_user_role(email: str, role: str, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    # Solo administradores pueden cambiar roles
+@router.put("/{user_id}", response_model=UserResponse)
+def admin_update_user(user_id: int, user_in: UserUpdate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     if current_user.role != "admin":
-        raise HTTPException(status_code=403, detail="No tienes permisos para esta acción")
+        raise HTTPException(status_code=403, detail="Permisos insuficientes")
     
-    user = db.query(User).filter(User.email == email).first()
+    user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="Usuario no encontrado")
     
-    user.role = role
+    if user_in.full_name is not None:
+        user.full_name = user_in.full_name
+    if user_in.email is not None:
+        # Verificar duplicados
+        existing = db.query(User).filter(User.email == user_in.email, User.id != user_id).first()
+        if existing:
+            raise HTTPException(status_code=400, detail="El email ya está en uso")
+        user.email = user_in.email
+    if user_in.department is not None:
+        user.department = user_in.department
+    if user_in.role is not None:
+        user.role = user_in.role
+    if user_in.password is not None:
+        user.hashed_password = get_password_hash(user_in.password)
+        
     db.commit()
-    return {"success": True, "message": f"Rol de {email} actualizado a {role}"}
+    db.refresh(user)
+    return user
+
+@router.delete("/{user_id}")
+def delete_user(user_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Permisos insuficientes")
+    
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    
+    # No permitir que el admin se borre a sí mismo
+    if user.id == current_user.id:
+        raise HTTPException(status_code=400, detail="No puedes eliminar tu propia cuenta")
+        
+    db.delete(user)
+    db.commit()
+    return {"success": True, "message": "Usuario eliminado correctamente"}
