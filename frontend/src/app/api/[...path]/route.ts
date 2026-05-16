@@ -7,13 +7,14 @@ const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:8000';
  * Proxy universal para redirigir peticiones al backend de FastAPI.
  * Maneja automáticamente la inclusión del token de autenticación desde las cookies.
  */
-async function handleRequest(request: Request, { params }: { params: { path: string[] } }) {
-  const path = params.path.join('/');
+async function handleRequest(request: Request, context: { params: Promise<{ path: string[] }> }) {
+  const { path: pathSegments } = await context.params;
+  const path = pathSegments.join('/');
   const { search } = new URL(request.url);
   const targetUrl = `${BACKEND_URL}/${path}${search}`;
 
   try {
-    const cookieStore = cookies();
+    const cookieStore = await cookies();
     const token = cookieStore.get('ergoai_token')?.value;
 
     const method = request.method;

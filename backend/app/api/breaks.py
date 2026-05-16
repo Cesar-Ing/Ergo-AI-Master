@@ -38,6 +38,13 @@ def create_break(break_data: BreakCreate, db: Session = Depends(get_db)):
     db.refresh(db_break)
     return db_break
 
+@router.get("/", response_model=List[BreakResponse])
+def get_breaks(userId: Optional[int] = None, db: Session = Depends(get_db)):
+    query = db.query(ActiveBreak)
+    if userId:
+        query = query.filter(ActiveBreak.user_id == userId)
+    return query.all()
+
 @router.get("/user/{user_id}", response_model=List[BreakResponse])
 def get_user_breaks(user_id: int, db: Session = Depends(get_db)):
     return db.query(ActiveBreak).filter(ActiveBreak.user_id == user_id).all()
