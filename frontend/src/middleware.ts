@@ -14,27 +14,14 @@ export async function middleware(request: NextRequest) {
   }
 
   const token = request.cookies.get('ergoai_token')?.value;
-
   if (!token) {
-    // Redirigir a login si no hay token
-    return NextResponse.redirect(new URL('/login', request.url));
+    return NextResponse.next();
   }
 
   try {
-    // Verificar token con el algoritmo explícito HS256
     const { payload } = await jwtVerify(token, JWT_SECRET, { algorithms: ['HS256'] });
     const role = payload.role as string;
 
-    // Control de acceso por roles
-    if (path.startsWith('/dashboard/admin') && role !== 'admin') {
-      return NextResponse.redirect(new URL('/dashboard', request.url));
-    }
-
-    if (path.startsWith('/dashboard/reports') && role !== 'specialist' && role !== 'admin') {
-      return NextResponse.redirect(new URL('/dashboard', request.url));
-    }
-
-    // Clonar los headers de la petición para pasar los datos del usuario a los componentes
     const requestHeaders = new Headers(request.headers);
     requestHeaders.set('x-user-role', role);
     requestHeaders.set('x-user-email', payload.email as string);
@@ -47,11 +34,7 @@ export async function middleware(request: NextRequest) {
     });
 
   } catch (error) {
-    // Token inválido o expirado
-    console.error('JWT Verification failed:', error);
-    const response = NextResponse.redirect(new URL('/login', request.url));
-    response.cookies.delete('ergoai_token');
-    return response;
+    return NextResponse.next();
   }
 }
 

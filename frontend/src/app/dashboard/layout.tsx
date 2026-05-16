@@ -48,38 +48,28 @@ export default function DashboardLayout({
           const data = await res.json();
           setSession(data);
           
-          // RESPALDO CRÍTICO: Guardar ID en localStorage para el Dashboard
           if (data.id) {
             localStorage.setItem('ergoai_user_id', data.id);
             localStorage.setItem('ergoai_user_role', data.role);
           }
 
-          // Cargar Racha
-          const bRes = await fetch(`/api/breaks?userId=${data.id}`);
-          if (bRes.ok) {
-            const bData = await bRes.json();
-            const days = Array.from(new Set(bData.map((b:any) => b.start_time.split('T')[0]))).sort().reverse();
-            let count = 0;
-            const today = new Date().toISOString().split('T')[0];
-            const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
-            if (days.includes(today) || days.includes(yesterday)) {
-              let check = days.includes(today) ? new Date() : new Date(Date.now() - 86400000);
-              while (days.includes(check.toISOString().split('T')[0])) {
-                count++;
-                check.setDate(check.getDate() - 1);
+          // Cargar Racha sin bloquear
+          fetch(`/api/breaks?userId=${data.id}`)
+            .then(r => r.json())
+            .then(bData => {
+              const days = Array.from(new Set(bData.map((b:any) => b.start_time.split('T')[0]))).sort().reverse();
+              let count = 0;
+              const today = new Date().toISOString().split('T')[0];
+              const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+              if (days.includes(today) || days.includes(yesterday)) {
+                let check = days.includes(today) ? new Date() : new Date(Date.now() - 86400000);
+                while (days.includes(check.toISOString().split('T')[0])) {
+                  count++;
+                  check.setDate(check.getDate() - 1);
+                }
               }
-            }
-            setStreak(count);
-          }
-
-          // Redirección por rol
-          if (data.role === 'admin' && !pathname.startsWith('/dashboard/admin')) {
-            router.push('/dashboard/admin');
-          } else if (data.role === 'specialist' && !pathname.startsWith('/dashboard/reports')) {
-            router.push('/dashboard/reports');
-          }
-        } else {
-          router.push('/login');
+              setStreak(count);
+            }).catch(() => {});
         }
       } catch (e) {
         console.error("Layout Session Error:", e);
