@@ -4,8 +4,7 @@ const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:8000';
 
 async function proxyRequest(request: Request) {
   const { pathname, search } = new URL(request.url);
-  // Mapear /api/stats/ directamente a la raíz / del backend FastAPI
-  const targetPath = pathname.replace('/api/stats/', '/');
+  const targetPath = pathname.replace('/api/', '/');
   const targetUrl = `${BACKEND_URL}${targetPath}${search}`;
 
   try {
