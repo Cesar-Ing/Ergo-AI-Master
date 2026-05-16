@@ -11,6 +11,11 @@ router.include_router(config.router)
 router.include_router(stats.router)
 router.include_router(database_manager.router)
 
+# Fallback singular para compatibilidad
+@router.get("/user/me")
+def get_me_singular(user=users.Depends(users.get_current_user)):
+    return user
+
 @router.get("/health")
 def health_check():
     return {"status": "ok", "detail": "API Router con Auth operativo"}

@@ -89,7 +89,7 @@ export default function DashboardPage() {
     setMounted(true);
     const loadData = async () => {
       try {
-        const sRes = await fetch('/api/user/me');
+        const sRes = await fetch('/api/users/me');
         if (!sRes.ok) return;
         const sData = await sRes.json();
         setSession(sData);
@@ -130,8 +130,8 @@ export default function DashboardPage() {
   const handleUpdateProfile = async () => {
     setIsUpdating(true);
     try {
-      const res = await fetch('/api/auth/update-profile', {
-        method: 'POST',
+      const res = await fetch('/api/auth/profile', {
+        method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: profileName, email: profileEmail, department: profileDept, password: profilePass })
       });

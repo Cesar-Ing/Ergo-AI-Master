@@ -56,7 +56,7 @@ export default function DashboardLayout({
     const checkSession = async () => {
       try {
         // A. Intentar sesión del servidor
-        const res = await fetch('/api/user/me');
+        const res = await fetch('/api/users/me');
         let data = res.ok ? await res.json() : null;
 
         // B. Respaldo de seguridad (Si el servidor no responde o es login manual reciente)

@@ -13,6 +13,11 @@ router = APIRouter(prefix="/users", tags=["Users"])
 def get_me(current_user: User = Depends(get_current_user)):
     return current_user
 
+# Alias singular para compatibilidad con el frontend
+@router.get("/me-singular", response_model=UserResponse)
+def get_me_singular(current_user: User = Depends(get_current_user)):
+    return current_user
+
 @router.put("/me", response_model=UserResponse)
 def update_me(user_in: UserUpdate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     if user_in.full_name is not None:
