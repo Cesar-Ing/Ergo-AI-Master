@@ -4,6 +4,7 @@ from sqlalchemy import func, desc, cast, Date
 from app.core.database import get_db
 from app.models.user import User
 from app.models.active_break import ActiveBreak
+from app.api.auth import get_current_user
 from pydantic import BaseModel
 
 router = APIRouter(prefix="/stats", tags=["stats"])
@@ -14,7 +15,7 @@ class ProfileUpdate(BaseModel):
     department: str
 
 @router.post("/update-profile")
-def update_profile(data: ProfileUpdate, db: Session = Depends(get_db)):
+def update_profile(data: ProfileUpdate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     user = db.query(User).filter(User.id == data.user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
@@ -24,7 +25,7 @@ def update_profile(data: ProfileUpdate, db: Session = Depends(get_db)):
     return {"status": "success"}
 
 @router.get("/users-triage")
-def get_users_triage(db: Session = Depends(get_db)):
+def get_users_triage(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     print("DEBUG: [Triage] Iniciando consulta...")
     try:
         # Consulta optimizada: Usuarios con su promedio de score en un solo paso
@@ -63,7 +64,7 @@ def get_users_triage(db: Session = Depends(get_db)):
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/global-activity")
-def get_global_activity(db: Session = Depends(get_db)):
+def get_global_activity(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     # Agrupar por fecha y contar usuarios únicos activos
     activity = db.query(
         cast(ActiveBreak.start_time, Date).label('day'),
@@ -73,7 +74,7 @@ def get_global_activity(db: Session = Depends(get_db)):
     return [{"day": str(a.day), "count": a.count} for a in activity]
 
 @router.get("/departments-risk")
-def get_departments_risk(db: Session = Depends(get_db)):
+def get_departments_risk(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     # Agrupar por departamento y calcular riesgo
     risks = db.query(
         User.department,

@@ -100,8 +100,8 @@ def social_login(social_data: SocialLoginData, db: Session = Depends(get_db)):
     
     is_new = False
     if not user:
-        # Determinar rol basado en el correo (Tu correo será ADMIN)
-        assigned_role = "admin" if social_data.email == "camachoroman04@gmail.com" else "user"
+        # Determinar rol basado en el correo
+        assigned_role = "admin" if social_data.email.lower() in settings.admin_emails_list else "user"
         
         user = User(
             email=social_data.email,
@@ -113,8 +113,8 @@ def social_login(social_data: SocialLoginData, db: Session = Depends(get_db)):
         db.add(user)
         is_new = True
     else:
-        # Si el usuario ya existe pero es tu correo, nos aseguramos de que sea admin
-        if social_data.email == "camachoroman04@gmail.com":
+        # Si el usuario ya existe pero está en la lista de admins, nos aseguramos de que sea admin
+        if social_data.email.lower() in settings.admin_emails_list:
             user.role = "admin"
     
     db.commit()

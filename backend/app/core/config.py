@@ -16,6 +16,13 @@ class Settings(BaseSettings):
     # CORS
     CORS_ORIGINS: str = os.getenv("CORS_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000")
 
+    # Administración
+    ADMIN_EMAILS: str = os.getenv("ADMIN_EMAILS", "camachoroman04@gmail.com")
+
+    @property
+    def admin_emails_list(self) -> list[str]:
+        return [email.strip().lower() for email in self.ADMIN_EMAILS.split(",") if email.strip()]
+
     @property
     def cors_origins_list(self) -> list[str]:
         # Si la variable viene vacía o es *, permitimos todo (útil para debug)
