@@ -40,46 +40,55 @@ export default function DashboardLayout({
   };
 
   const handleLogout = () => {
-    try {
-      localStorage.clear();
-      fetch('/api/auth/logout', { method: 'POST' }).catch(() => {});
-      signOut({ redirect: false }).catch(() => {});
-      window.location.href = '/login';
-    } catch (e) {
-      window.location.href = '/login';
-    }
+    // 1. Limpieza agresiva de todo rastro
+    localStorage.clear();
+    sessionStorage.clear();
+    
+    // 2. Llamada de limpieza al servidor (sin esperar)
+    fetch('/api/auth/logout', { method: 'POST' }).catch(() => {});
+    
+    // 3. Redirección inmediata y forzada
+    window.location.href = '/login';
   };
 
   useEffect(() => {
+    setMounted(true);
     const checkSession = async () => {
       try {
+        // A. Intentar sesión del servidor
         const res = await fetch('/api/user/me');
         let data = res.ok ? await res.json() : null;
-        
+
+        // B. Respaldo de seguridad (Si el servidor no responde o es login manual reciente)
         if (!data || !data.id) {
-          const savedRole = localStorage.getItem('ergoai_user_role');
-          const savedEmail = localStorage.getItem('ergoai_user_email');
-          if (savedEmail) {
-            data = { id: 'legacy', role: savedRole || 'user', email: savedEmail, name: 'Usuario' };
+          const localEmail = localStorage.getItem('ergoai_user_email');
+          const localRole = localStorage.getItem('ergoai_user_role');
+          if (localEmail) {
+            data = { 
+              id: localStorage.getItem('ergoai_user_id') || 'manual_user',
+              email: localEmail,
+              role: localRole || 'user',
+              name: localEmail.split('@')[0]
+            };
           }
         }
 
         if (data) {
           setSession(data);
-          if (data.id && data.id !== 'legacy') {
-            localStorage.setItem('ergoai_user_id', data.id);
-            localStorage.setItem('ergoai_user_role', data.role);
-          }
+          setLoading(false);
           
-          if (data.id && data.id !== 'legacy') {
-             fetch(`/api/breaks?userId=${data.id}`).then(r => r.json()).then(bData => {
-               setStreak(Array.from(new Set(bData.map((b:any) => b.start_time.split('T')[0]))).length);
-             }).catch(() => {});
+          // Cargar racha en background
+          if (data.id && data.id !== 'manual_user') {
+            fetch(`/api/breaks?userId=${data.id}`)
+              .then(r => r.json())
+              .then(bData => setStreak(bData.length))
+              .catch(() => {});
           }
+        } else {
+          // Si realmente no hay nada de nada, solo entonces mandamos al login
+          window.location.href = '/login';
         }
       } catch (e) {
-        console.error("Session Check Error", e);
-      } finally {
         setLoading(false);
       }
     };
