@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
+import { signOut } from "next-auth/react";
 
 export default function DashboardLayout({
   children,
@@ -41,46 +42,41 @@ export default function DashboardLayout({
     setMounted(true);
     const checkSession = async () => {
       try {
+        // Intentar obtener sesión unificada
         const res = await fetch('/api/user/me');
         if (res.ok) {
           const data = await res.json();
           setSession(data);
           
-          // Sincronizar localStorage por si acaso
+          // RESPALDO CRÍTICO: Guardar ID en localStorage para el Dashboard
           if (data.id) {
+            localStorage.setItem('ergoai_user_id', data.id);
             localStorage.setItem('ergoai_user_role', data.role);
-            localStorage.setItem('ergoai_user_email', data.email);
           }
 
-          // Cargar Racha para el Sidebar
+          // Cargar Racha
           const bRes = await fetch(`/api/breaks?userId=${data.id}`);
           if (bRes.ok) {
             const bData = await bRes.json();
-            // Calcular racha rápida
             const days = Array.from(new Set(bData.map((b:any) => b.start_time.split('T')[0]))).sort().reverse();
             let count = 0;
             const today = new Date().toISOString().split('T')[0];
             const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
-            
             if (days.includes(today) || days.includes(yesterday)) {
               let check = days.includes(today) ? new Date() : new Date(Date.now() - 86400000);
-              while (true) {
-                if (days.includes(check.toISOString().split('T')[0])) {
-                  count++;
-                  check.setDate(check.getDate() - 1);
-                } else break;
+              while (days.includes(check.toISOString().split('T')[0])) {
+                count++;
+                check.setDate(check.getDate() - 1);
               }
             }
             setStreak(count);
           }
 
-          // Seguridad y redirección estricta por rol
+          // Redirección por rol
           if (data.role === 'admin' && !pathname.startsWith('/dashboard/admin')) {
             router.push('/dashboard/admin');
           } else if (data.role === 'specialist' && !pathname.startsWith('/dashboard/reports')) {
             router.push('/dashboard/reports');
-          } else if (data.role === 'user' && pathname !== '/dashboard' && !pathname.startsWith('/dashboard/admin') && !pathname.startsWith('/dashboard/reports')) {
-             // Permitir que se quede en /dashboard si es user
           }
         } else {
           router.push('/login');
@@ -92,33 +88,16 @@ export default function DashboardLayout({
       }
     };
     checkSession();
-
-    // Sincronización reactiva del perfil
-    const handleSync = () => checkSession();
-    window.addEventListener('ergoai-profile-updated', handleSync);
-    return () => window.removeEventListener('ergoai-profile-updated', handleSync);
   }, [pathname]);
 
   const handleLogout = async () => {
+    if (!confirm("¿Seguro que quieres cerrar sesión?")) return;
     try {
-      // 1. Limpiar sesión de NextAuth (si existe)
-      const { signOut } = await import("next-auth/react");
-      await signOut({ redirect: false });
-      
-      // 2. Limpiar cookie manual en el servidor
+      // Limpieza total inmediata
+      localStorage.clear();
       await fetch('/api/auth/logout', { method: 'POST' });
-      
-      // 3. Limpiar localStorage
-      localStorage.removeItem('ergoai_token');
-      localStorage.removeItem('ergoai_user_role');
-      localStorage.removeItem('ergoai_user_email');
-      localStorage.removeItem('ergoai-theme');
-      
-      // 4. Redirigir al login
-      router.push('/login');
+      await signOut({ callbackUrl: '/login' });
     } catch (error) {
-      console.error("Logout error:", error);
-      // Forzar salida si falla algo
       window.location.href = '/login';
     }
   };
