@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from typing import List
 from app.core.database import get_db
 from app.models.user import User
-from app.schemas.user import UserResponse, UserUpdate, UserCreateAdmin
+from app.schemas.user import UserResponse, UserUpdate
 from app.core.security import get_password_hash
 from app.api.auth import get_current_user
 
@@ -31,28 +31,6 @@ def update_me(user_in: UserUpdate, db: Session = Depends(get_db), current_user: 
     db.commit()
     db.refresh(current_user)
     return current_user
-
-
-@router.post("/", response_model=UserResponse)
-def create_user_admin(user_in: UserCreateAdmin, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    if current_user.role != "admin":
-        raise HTTPException(status_code=403, detail="Permisos insuficientes")
-    
-    existing = db.query(User).filter(User.email == user_in.email).first()
-    if existing:
-        raise HTTPException(status_code=400, detail="El email ya está registrado")
-    
-    new_user = User(
-        email=user_in.email,
-        full_name=user_in.full_name,
-        hashed_password=get_password_hash(user_in.password),
-        role=user_in.role,
-        department=user_in.department
-    )
-    db.add(new_user)
-    db.commit()
-    db.refresh(new_user)
-    return new_user
 
 @router.get("/")
 def list_users(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):

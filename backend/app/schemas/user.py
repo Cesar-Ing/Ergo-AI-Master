@@ -10,17 +10,11 @@ class UserBase(BaseModel):
 class UserCreate(UserBase):
     password: str
 
-class UserCreateAdmin(UserCreate):
-    role: Optional[str] = "user"
-    department: Optional[str] = "General"
-
 class UserResponse(UserBase):
     id: int
     role: str
-    department: Optional[str] = None
     is_active: bool
     created_at: datetime
-    last_login: Optional[datetime] = None
 
     class Config:
         from_attributes = True # Esto permite que Pydantic lea modelos de SQLAlchemy

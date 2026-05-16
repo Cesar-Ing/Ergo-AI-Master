@@ -41,11 +41,17 @@ export default function DashboardLayout({
     setMounted(true);
     const checkSession = async () => {
       try {
-        const res = await fetch('/api/auth/session');
+        const res = await fetch('/api/user/me');
         if (res.ok) {
           const data = await res.json();
           setSession(data);
           
+          // Sincronizar localStorage por si acaso
+          if (data.id) {
+            localStorage.setItem('ergoai_user_role', data.role);
+            localStorage.setItem('ergoai_user_email', data.email);
+          }
+
           // Cargar Racha para el Sidebar
           const bRes = await fetch(`/api/breaks?userId=${data.id}`);
           if (bRes.ok) {
@@ -73,8 +79,8 @@ export default function DashboardLayout({
             router.push('/dashboard/admin');
           } else if (data.role === 'specialist' && !pathname.startsWith('/dashboard/reports')) {
             router.push('/dashboard/reports');
-          } else if (data.role === 'user' && pathname !== '/dashboard') {
-            router.push('/dashboard');
+          } else if (data.role === 'user' && pathname !== '/dashboard' && !pathname.startsWith('/dashboard/admin') && !pathname.startsWith('/dashboard/reports')) {
+             // Permitir que se quede en /dashboard si es user
           }
         } else {
           router.push('/login');
@@ -94,8 +100,27 @@ export default function DashboardLayout({
   }, [pathname]);
 
   const handleLogout = async () => {
-    await fetch('/api/auth/logout', { method: 'POST' });
-    router.push('/login');
+    try {
+      // 1. Limpiar sesión de NextAuth (si existe)
+      const { signOut } = await import("next-auth/react");
+      await signOut({ redirect: false });
+      
+      // 2. Limpiar cookie manual en el servidor
+      await fetch('/api/auth/logout', { method: 'POST' });
+      
+      // 3. Limpiar localStorage
+      localStorage.removeItem('ergoai_token');
+      localStorage.removeItem('ergoai_user_role');
+      localStorage.removeItem('ergoai_user_email');
+      localStorage.removeItem('ergoai-theme');
+      
+      // 4. Redirigir al login
+      router.push('/login');
+    } catch (error) {
+      console.error("Logout error:", error);
+      // Forzar salida si falla algo
+      window.location.href = '/login';
+    }
   };
 
   // Prevenir Hydration Mismatch

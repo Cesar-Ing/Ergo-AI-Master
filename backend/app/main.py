@@ -14,26 +14,11 @@ app = FastAPI(title="ErgoAI API", version="0.1.0")
 @app.on_event("startup")
 def on_startup():
     try:
-        # 1. Crear tablas básicas
+        # Crea las tablas de forma asíncrona (en background) al iniciar, 
+        # esto evita que Railway mate el proceso por demorar en bindear el puerto
         Base.metadata.create_all(bind=engine)
-        
-        # 2. Auto-migración: Intentar añadir last_login si no existe
-        from sqlalchemy import text
-        with engine.connect() as conn:
-            try:
-                conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS last_login TIMESTAMP WITH TIME ZONE"))
-                conn.commit()
-                print("✅ Columna last_login verificada/añadida.")
-            except Exception as sql_e:
-                # Si falla es porque probablemente ya existe o es SQLite (usa otra sintaxis)
-                try:
-                    conn.execute(text("ALTER TABLE users ADD COLUMN last_login DATETIME"))
-                    conn.commit()
-                except:
-                    pass
-                print(f"Nota: Salto de migración manual (probablemente ya existe): {sql_e}")
     except Exception as e:
-        print("Error en el inicio de la base de datos:", e)
+        print("Error al conectar con la base de datos en el inicio:", e)
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):

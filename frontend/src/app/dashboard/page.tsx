@@ -89,7 +89,7 @@ export default function DashboardPage() {
     setMounted(true);
     const loadData = async () => {
       try {
-        const sRes = await fetch('/api/auth/session');
+        const sRes = await fetch('/api/user/me');
         if (!sRes.ok) return;
         const sData = await sRes.json();
         setSession(sData);
