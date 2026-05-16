@@ -106,13 +106,11 @@ function LoginContent() {
           <div className="flex justify-center mb-8">
             <div className="relative group">
               <div className="absolute -inset-1 bg-gradient-to-r from-emerald-400 to-blue-500 rounded-full blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200"></div>
-              <div className="relative h-20 w-20 bg-[#0B1B3D] rounded-3xl overflow-hidden border border-white/20 flex items-center justify-center shadow-2xl transition-transform duration-500 group-hover:scale-110">
-                <img 
-                  src="/min.png" 
-                  alt="ErgoAI Logo" 
-                  className="w-full h-full object-cover"
-                />
-              </div>
+              <img 
+                src="/logo.png" 
+                alt="ErgoAI Logo" 
+                className="relative h-20 w-auto object-contain transition-transform duration-500 group-hover:scale-110"
+              />
             </div>
           </div>
           

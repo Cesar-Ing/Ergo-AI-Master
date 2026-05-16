@@ -18,7 +18,7 @@ export default function RegisterPage() {
       setError("Por favor completa todos los campos.");
       return;
     }
-    
+
     setLoading(true);
     setError("");
 
@@ -64,30 +64,28 @@ export default function RegisterPage() {
   return (
     <div className="min-h-screen flex items-center justify-center px-4 relative overflow-hidden font-sans bg-[#050B18]">
       {/* Fondo con imagen oficial */}
-      <div 
+      <div
         className="absolute inset-0 z-0 opacity-40 bg-cover bg-center bg-no-repeat"
         style={{ backgroundImage: "url('/login-bg.jpg')" }}
       />
-      
+
       {/* Capa de degradado */}
       <div className="absolute inset-0 z-10 bg-gradient-to-b from-[#050B18]/20 via-[#050B18]/60 to-[#050B18]" />
 
       <div className="w-full max-w-md z-20 animate-in fade-in zoom-in-95 duration-700">
         <div className="bg-white/95 dark:bg-[#0B1B3D]/90 backdrop-blur-xl border border-white/20 rounded-[2.5rem] p-10 shadow-2xl relative overflow-hidden">
-          
+
           <div className="flex justify-center mb-8">
             <div className="relative group">
               <div className="absolute -inset-1 bg-gradient-to-r from-emerald-400 to-blue-500 rounded-full blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200"></div>
-              <div className="relative h-20 w-20 bg-[#0B1B3D] rounded-3xl overflow-hidden border border-white/20 flex items-center justify-center shadow-2xl transition-transform duration-500 group-hover:scale-110">
-                <img 
-                  src="/min.png" 
-                  alt="ErgoAI Logo" 
-                  className="w-full h-full object-cover"
-                />
-              </div>
+              <img 
+                src="/logo.png" 
+                alt="ErgoAI Logo" 
+                className="relative h-16 w-auto object-contain transition-transform duration-500 group-hover:scale-110"
+              />
             </div>
           </div>
-          
+
           <div className="text-center mb-8">
             <h1 className="text-3xl font-black text-[#0B1B3D] dark:text-white tracking-tighter mb-2">Crear Cuenta</h1>
             <p className="text-slate-500 dark:text-blue-200/60 text-xs font-bold uppercase tracking-widest">Únete a la salud inteligente</p>
@@ -99,14 +97,14 @@ export default function RegisterPage() {
                 {error}
               </div>
             )}
-            
+
             <div className="space-y-2">
               <label className="text-[10px] font-black text-slate-400 dark:text-blue-200/40 uppercase tracking-widest px-2">Nombre Completo</label>
-              <input 
-                type="text" 
+              <input
+                type="text"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
-                placeholder="Juan Perez" 
+                placeholder="Juan Perez"
                 required
                 className="w-full h-12 px-6 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 text-[#0B1B3D] dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all font-bold text-sm"
               />
@@ -114,11 +112,11 @@ export default function RegisterPage() {
 
             <div className="space-y-2">
               <label className="text-[10px] font-black text-slate-400 dark:text-blue-200/40 uppercase tracking-widest px-2">Email Corporativo</label>
-              <input 
-                type="email" 
+              <input
+                type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="usuario@ergoai.com" 
+                placeholder="usuario@ergoai.com"
                 required
                 className="w-full h-12 px-6 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 text-[#0B1B3D] dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all font-bold text-sm"
               />
@@ -126,20 +124,20 @@ export default function RegisterPage() {
 
             <div className="space-y-2">
               <label className="text-[10px] font-black text-slate-400 dark:text-blue-200/40 uppercase tracking-widest px-2">Contraseña</label>
-              <input 
-                type="password" 
+              <input
+                type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••" 
+                placeholder="••••••••"
                 required
                 className="w-full h-12 px-6 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 text-[#0B1B3D] dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all font-bold text-sm"
               />
             </div>
 
             <div className="pt-4">
-              <Button 
-                type="submit" 
-                disabled={loading} 
+              <Button
+                type="submit"
+                disabled={loading}
                 className="w-full h-14 bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-500 hover:to-teal-600 text-white font-black text-sm uppercase tracking-widest shadow-xl rounded-2xl transition-all active:scale-95"
               >
                 {loading ? "Creando..." : "Registrar Cuenta"}
@@ -154,7 +152,7 @@ export default function RegisterPage() {
             </Link>
           </div>
         </div>
-        
+
         <div className="mt-8 text-center">
           <Link href="/" className="text-[10px] font-black text-white/20 hover:text-white/40 uppercase tracking-widest transition-colors">
             ← Volver al inicio
