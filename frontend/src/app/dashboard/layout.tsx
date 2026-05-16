@@ -39,15 +39,22 @@ export default function DashboardLayout({
     }
   };
 
-  const handleLogout = () => {
-    // 1. Limpieza agresiva de todo rastro
+  const handleLogout = async () => {
+    // 1. Limpieza de NextAuth (Social)
+    try {
+      await signOut({ redirect: false });
+    } catch (e) {
+      console.error("NextAuth signOut error:", e);
+    }
+
+    // 2. Limpieza agresiva de todo rastro local
     localStorage.clear();
     sessionStorage.clear();
     
-    // 2. Llamada de limpieza al servidor (sin esperar)
-    fetch('/api/auth/logout', { method: 'POST' }).catch(() => {});
+    // 3. Llamada de limpieza de cookies al servidor
+    await fetch('/api/auth/logout', { method: 'POST' }).catch(() => {});
     
-    // 3. Redirección inmediata y forzada
+    // 4. Redirección inmediata y forzada
     window.location.href = '/login';
   };
 

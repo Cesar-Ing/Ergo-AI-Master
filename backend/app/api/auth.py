@@ -88,6 +88,7 @@ def login(login_data: LoginData, db: Session = Depends(get_db)):
     
     return {
         "success": True,
+        "id": user.id,
         "role": user.role,
         "email": user.email,
         "access_token": access_token

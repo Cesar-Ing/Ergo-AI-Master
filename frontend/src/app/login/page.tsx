@@ -62,6 +62,7 @@ function LoginContent() {
 
       if (res.ok) {
         localStorage.setItem("ergoai_token", data.token);
+        localStorage.setItem("ergoai_user_id", data.id);
         localStorage.setItem("ergoai_user_email", data.email);
         localStorage.setItem("ergoai_user_role", data.role);
         router.push("/dashboard");

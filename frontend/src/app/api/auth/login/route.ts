@@ -4,32 +4,38 @@ const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:8000';
 
 export async function POST(request: Request) {
   try {
-    const { email, password } = await request.json();
+    const body = await request.json();
+    const { email, password } = body;
 
     if (!email || !password) {
       return NextResponse.json({ error: 'Email y contraseña son requeridos' }, { status: 400 });
     }
 
+    // Llamada al backend real
     const response = await fetch(`${BACKEND_URL}/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password })
     });
 
+    const data = await response.json();
+
     if (!response.ok) {
-        const error = await response.json().catch(() => ({ detail: 'Credenciales inválidas' }));
-        return NextResponse.json({ error: error.detail }, { status: response.status });
+        return NextResponse.json(
+          { error: data.detail || 'Credenciales inválidas' }, 
+          { status: response.status }
+        );
     }
 
-    const data = await response.json();
     const token = data.access_token;
 
-    // Configurar cookie httpOnly
+    // Crear la respuesta y configurar la cookie HttpOnly
     const nextResponse = NextResponse.json({ 
       success: true, 
+      id: data.id,
       role: data.role, 
       email: data.email,
-      token: token
+      token: token // Devolvemos el token también para localStorage por compatibilidad
     });
     
     if (token) {
@@ -47,6 +53,9 @@ export async function POST(request: Request) {
     return nextResponse;
   } catch (error) {
     console.error('Login proxy error:', error);
-    return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Error de conexión con el servidor backend' }, 
+      { status: 500 }
+    );
   }
 }
