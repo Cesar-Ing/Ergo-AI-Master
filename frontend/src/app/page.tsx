@@ -13,12 +13,7 @@ export default function Home() {
       {/* Header */}
       <header className="flex items-center justify-between px-12 py-8 w-full max-w-7xl mx-auto z-50">
         <div className="flex items-center gap-4 group cursor-pointer">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-400 flex items-center justify-center font-black text-white shadow-[0_0_20px_rgba(16,185,129,0.4)] group-hover:scale-110 transition-transform">
-            E
-          </div>
-          <span className="text-3xl font-black tracking-tighter text-white">
-            Ergo<span className="text-emerald-500">IA</span>
-          </span>
+          <img src="/logo.png" alt="ErgoAI Logo" className="h-16 w-auto group-hover:scale-105 transition-transform duration-500" />
         </div>
         
         <nav className="hidden lg:flex gap-12 text-[10px] font-black uppercase tracking-[0.2em] text-blue-200/40">

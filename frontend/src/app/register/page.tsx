@@ -77,12 +77,10 @@ export default function RegisterPage() {
 
           <div className="flex justify-center mb-8">
             <div className="relative group">
-              <div className="absolute -inset-1 bg-gradient-to-r from-emerald-400 to-blue-500 rounded-full blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200"></div>
-              <img 
-                src="/logo.png" 
-                alt="ErgoAI Logo" 
-                className="relative h-16 w-auto object-contain transition-transform duration-500 group-hover:scale-110"
-              />
+              <div className="absolute -inset-1 bg-gradient-to-r from-emerald-400 to-blue-500 rounded-2xl blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200"></div>
+              <div className="relative w-20 h-20 rounded-3xl bg-gradient-to-br from-emerald-500 to-teal-400 flex items-center justify-center font-black text-white text-4xl shadow-2xl transition-transform duration-500 group-hover:scale-110 border border-white/20">
+                E
+              </div>
             </div>
           </div>
 
