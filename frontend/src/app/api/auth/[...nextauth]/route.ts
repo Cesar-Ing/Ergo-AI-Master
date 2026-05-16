@@ -63,20 +63,18 @@ const handler = NextAuth({
       }
     },
     async jwt({ token, user }) {
-      // Pasa los datos del backend a la sesión JWT de NextAuth
       if (user) {
-        if ((user as any).backendToken) token.backendToken = (user as any).backendToken;
-        if ((user as any).role) token.role = (user as any).role;
+        token.backendToken = (user as any).backendToken;
+        token.role = (user as any).role;
+        token.id = user.id; // Preservar ID
       }
       return token;
     },
     async session({ session, token }) {
-      // Pone los datos en la sesión para que el cliente los use
-      if (token.backendToken) {
-        (session as any).backendToken = token.backendToken;
-      }
-      if (token.role) {
+      if (session.user) {
+        (session as any).id = token.sub || token.id; // El 'sub' es el ID estándar
         (session as any).role = token.role;
+        (session as any).backendToken = token.backendToken;
       }
       return session;
     }
