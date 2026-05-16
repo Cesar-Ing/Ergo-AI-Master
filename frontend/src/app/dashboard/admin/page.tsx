@@ -10,7 +10,7 @@ interface Config { [key: string]: string; }
 export default function AdminPage() {
   const [mounted, setMounted] = useState(false);
   const [users, setUsers] = useState<User[]>([]);
-  const [activeTab, setActiveTab] = useState("activity");
+  const [activeTab, setActiveTab] = useState("users");
   const [globalActivity, setGlobalActivity] = useState<any[]>([]);
   const [configs, setConfigs] = useState<Config>({});
   const [isSaving, setIsSaving] = useState(false);
@@ -80,7 +80,7 @@ export default function AdminPage() {
     e.preventDefault();
     try {
       const method = editingUser ? 'PUT' : 'POST';
-      const url = editingUser ? `/users/${editingUser.id}` : '/auth/register';
+      const url = editingUser ? `/users/${editingUser.id}` : '/users/';
       
       const body = { ...formData };
       if (editingUser && !body.password) delete (body as any).password;
@@ -255,6 +255,11 @@ export default function AdminPage() {
                           <span className={`px-6 py-2.5 rounded-2xl text-[10px] font-black tracking-widest uppercase shadow-sm ${u.role === 'admin' ? 'bg-indigo-600 text-white' : u.role === 'specialist' ? 'bg-emerald-500 text-white' : 'bg-slate-100 dark:bg-white/10 text-slate-400'}`}>
                              {u.role}
                           </span>
+                          {(u as any).last_login && (
+                             <p className="text-[9px] font-bold text-slate-400 mt-3 uppercase tracking-tighter">
+                               Último ingreso: {new Date((u as any).last_login).toLocaleString([], {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'})}
+                             </p>
+                          )}
                        </td>
                        <td className="px-12 py-10 text-right space-x-4">
                           <button onClick={() => handleEdit(u)} className="text-[10px] font-black text-indigo-600 uppercase tracking-widest hover:underline">Editar</button>

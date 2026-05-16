@@ -70,9 +70,13 @@ def login(login_data: LoginData, db: Session = Depends(get_db)):
     if not user:
         raise HTTPException(status_code=401, detail="Credenciales inválidas")
         
-    # Verify password
     if not verify_password(login_data.password, user.hashed_password):
         raise HTTPException(status_code=401, detail="Contraseña incorrecta")
+    
+    # Registrar último login
+    from datetime import datetime
+    user.last_login = datetime.utcnow()
+    db.commit()
             
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
@@ -116,6 +120,10 @@ def social_login(social_data: SocialLoginData, db: Session = Depends(get_db)):
         # Si el usuario ya existe pero es tu correo, nos aseguramos de que sea admin
         if social_data.email == "camachoroman04@gmail.com":
             user.role = "admin"
+    
+    # Registrar último login
+    from datetime import datetime
+    user.last_login = datetime.utcnow()
     
     db.commit()
     db.refresh(user)
