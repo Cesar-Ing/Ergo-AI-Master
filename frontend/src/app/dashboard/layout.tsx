@@ -18,6 +18,7 @@ export default function DashboardLayout({
   const pathname = usePathname();
 
   useEffect(() => {
+    setMounted(true);
     // Cargar preferencia de tema
     const savedTheme = localStorage.getItem('ergoai-theme');
     if (savedTheme === 'dark') {
@@ -38,59 +39,52 @@ export default function DashboardLayout({
     }
   };
 
+  const handleLogout = () => {
+    try {
+      localStorage.clear();
+      fetch('/api/auth/logout', { method: 'POST' }).catch(() => {});
+      signOut({ redirect: false }).catch(() => {});
+      window.location.href = '/login';
+    } catch (e) {
+      window.location.href = '/login';
+    }
+  };
+
   useEffect(() => {
-    setMounted(true);
     const checkSession = async () => {
       try {
-        // Intentar obtener sesión unificada
         const res = await fetch('/api/user/me');
-        if (res.ok) {
-          const data = await res.json();
+        let data = res.ok ? await res.json() : null;
+        
+        if (!data || !data.id) {
+          const savedRole = localStorage.getItem('ergoai_user_role');
+          const savedEmail = localStorage.getItem('ergoai_user_email');
+          if (savedEmail) {
+            data = { id: 'legacy', role: savedRole || 'user', email: savedEmail, name: 'Usuario' };
+          }
+        }
+
+        if (data) {
           setSession(data);
-          
-          if (data.id) {
+          if (data.id && data.id !== 'legacy') {
             localStorage.setItem('ergoai_user_id', data.id);
             localStorage.setItem('ergoai_user_role', data.role);
           }
-
-          // Cargar Racha sin bloquear
-          fetch(`/api/breaks?userId=${data.id}`)
-            .then(r => r.json())
-            .then(bData => {
-              const days = Array.from(new Set(bData.map((b:any) => b.start_time.split('T')[0]))).sort().reverse();
-              let count = 0;
-              const today = new Date().toISOString().split('T')[0];
-              const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
-              if (days.includes(today) || days.includes(yesterday)) {
-                let check = days.includes(today) ? new Date() : new Date(Date.now() - 86400000);
-                while (days.includes(check.toISOString().split('T')[0])) {
-                  count++;
-                  check.setDate(check.getDate() - 1);
-                }
-              }
-              setStreak(count);
-            }).catch(() => {});
+          
+          if (data.id && data.id !== 'legacy') {
+             fetch(`/api/breaks?userId=${data.id}`).then(r => r.json()).then(bData => {
+               setStreak(Array.from(new Set(bData.map((b:any) => b.start_time.split('T')[0]))).length);
+             }).catch(() => {});
+          }
         }
       } catch (e) {
-        console.error("Layout Session Error:", e);
+        console.error("Session Check Error", e);
       } finally {
         setLoading(false);
       }
     };
     checkSession();
   }, [pathname]);
-
-  const handleLogout = async () => {
-    if (!confirm("¿Seguro que quieres cerrar sesión?")) return;
-    try {
-      // Limpieza total inmediata
-      localStorage.clear();
-      await fetch('/api/auth/logout', { method: 'POST' });
-      await signOut({ callbackUrl: '/login' });
-    } catch (error) {
-      window.location.href = '/login';
-    }
-  };
 
   // Prevenir Hydration Mismatch
   if (!mounted) return <div className="min-h-screen bg-[#0B1B3D]" />;
