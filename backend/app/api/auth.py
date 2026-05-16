@@ -73,10 +73,14 @@ def login(login_data: LoginData, db: Session = Depends(get_db)):
     if not verify_password(login_data.password, user.hashed_password):
         raise HTTPException(status_code=401, detail="Contraseña incorrecta")
     
-    # Registrar último login
-    from datetime import datetime
-    user.last_login = datetime.utcnow()
-    db.commit()
+    # Registrar último login (con protección por si la DB no se ha actualizado)
+    try:
+        from datetime import datetime
+        user.last_login = datetime.utcnow()
+        db.commit()
+    except Exception as e:
+        print(f"Advertencia: No se pudo registrar last_login (posible columna faltante): {e}")
+        db.rollback()
             
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
@@ -121,9 +125,12 @@ def social_login(social_data: SocialLoginData, db: Session = Depends(get_db)):
         if social_data.email == "camachoroman04@gmail.com":
             user.role = "admin"
     
-    # Registrar último login
-    from datetime import datetime
-    user.last_login = datetime.utcnow()
+    # Registrar último login (con protección)
+    try:
+        from datetime import datetime
+        user.last_login = datetime.utcnow()
+    except Exception as e:
+        print(f"Advertencia Social: No se pudo registrar last_login: {e}")
     
     db.commit()
     db.refresh(user)
