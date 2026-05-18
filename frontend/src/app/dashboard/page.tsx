@@ -89,7 +89,7 @@ export default function DashboardPage() {
     setMounted(true);
     const loadData = async () => {
       try {
-        const sRes = await fetch('/api/users/me');
+        const sRes = await fetch('/api/users/me', { cache: 'no-store' });
         if (!sRes.ok) return;
         const sData = await sRes.json();
         if (sData.full_name) sData.name = sData.full_name;
@@ -100,7 +100,7 @@ export default function DashboardPage() {
         setProfileDept(sData.department || "");
 
         const [bRes, pRes, cRes] = await Promise.all([
-          fetch(`/api/breaks?userId=${sData.id}&t=${Date.now()}`),
+          fetch(`/api/breaks?userId=${sData.id}&t=${Date.now()}`, { cache: 'no-store' }),
           fetch(`/api/stats/prescriptions/user/${sData.id}`),
           fetch('/api/stats/config')
         ]);
@@ -228,7 +228,7 @@ export default function DashboardPage() {
       
       if (res.ok) {
         // Refrescar historial con cache-buster para evitar respuestas cacheadas
-        const bRes = await fetch(`/api/breaks?userId=${session.id}&t=${Date.now()}`);
+        const bRes = await fetch(`/api/breaks?userId=${session.id}&t=${Date.now()}`, { cache: 'no-store' });
         if (bRes.ok) {
           const bData = await bRes.json();
           const sorted = bData.sort((a:any, b:any) => new Date(b.start_time).getTime() - new Date(a.start_time).getTime());
