@@ -85,35 +85,43 @@ export default function DashboardLayout({
           setSession(data);
           setLoading(false);
           
+          const calculateStreak = (bData: any[]) => {
+            if (!Array.isArray(bData) || bData.length === 0) return 0;
+            const days = Array.from(new Set(bData.map((b: any) => b.start_time.split('T')[0]))).sort().reverse() as string[];
+            const today = new Date().toISOString().split('T')[0];
+            const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+            if (!days.includes(today) && !days.includes(yesterday)) return 0;
+            let count = 0;
+            let checkDate = days.includes(today) ? new Date(today) : new Date(yesterday);
+            while (true) {
+              const checkStr = checkDate.toISOString().split('T')[0];
+              if (days.includes(checkStr)) {
+                count++;
+                checkDate.setDate(checkDate.getDate() - 1);
+              } else break;
+            }
+            return count;
+          };
+
           // Cargar racha en background
           if (data.id && data.id !== 'manual_user') {
-            fetch(`/api/breaks?userId=${data.id}`)
+            fetch(`/api/breaks?userId=${data.id}&t=${Date.now()}`)
               .then(r => r.json())
-              .then(bData => {
-                if (!Array.isArray(bData) || bData.length === 0) {
-                  setStreak(0);
-                  return;
-                }
-                const days = Array.from(new Set(bData.map((b: any) => b.start_time.split('T')[0]))).sort().reverse() as string[];
-                const today = new Date().toISOString().split('T')[0];
-                const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
-                if (!days.includes(today) && !days.includes(yesterday)) {
-                  setStreak(0);
-                  return;
-                }
-                let count = 0;
-                let checkDate = days.includes(today) ? new Date(today) : new Date(yesterday);
-                while (true) {
-                  const checkStr = checkDate.toISOString().split('T')[0];
-                  if (days.includes(checkStr)) {
-                    count++;
-                    checkDate.setDate(checkDate.getDate() - 1);
-                  } else break;
-                }
-                setStreak(count);
-              })
+              .then(bData => setStreak(calculateStreak(bData)))
               .catch(() => {});
           }
+
+          // Escuchar eventos de sincronización globales
+          const handleProfileSync = (e: any) => setSession(e.detail);
+          const handleStreakSync = (e: any) => setStreak(calculateStreak(e.detail));
+          
+          window.addEventListener('profileUpdated', handleProfileSync);
+          window.addEventListener('streakUpdated', handleStreakSync);
+          
+          return () => {
+            window.removeEventListener('profileUpdated', handleProfileSync);
+            window.removeEventListener('streakUpdated', handleStreakSync);
+          };
         } else {
           // Si realmente no hay nada de nada, solo entonces mandamos al login
           window.location.href = '/login';

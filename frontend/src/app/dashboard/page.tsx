@@ -100,11 +100,14 @@ export default function DashboardPage() {
         setProfileDept(sData.department || "");
 
         const [bRes, pRes, cRes] = await Promise.all([
-          fetch(`/api/breaks?userId=${sData.id}`),
+          fetch(`/api/breaks?userId=${sData.id}&t=${Date.now()}`),
           fetch(`/api/stats/prescriptions/user/${sData.id}`),
           fetch('/api/stats/config')
         ]);
-        if (bRes.ok) setBreaks(await bRes.json());
+        if (bRes.ok) {
+          const bData = await bRes.json();
+          setBreaks(bData.sort((a:any, b:any) => new Date(b.start_time).getTime() - new Date(a.start_time).getTime()));
+        }
         if (pRes.ok) {
            const pData = await pRes.json();
            setPrescriptions(pData.sort((a:any,b:any)=>new Date(b.created_at).getTime() - new Date(a.created_at).getTime()));
@@ -224,11 +227,13 @@ export default function DashboardPage() {
       });
       
       if (res.ok) {
-        // Refrescar historial
-        const bRes = await fetch(`/api/breaks?userId=${session.id}`);
+        // Refrescar historial con cache-buster para evitar respuestas cacheadas
+        const bRes = await fetch(`/api/breaks?userId=${session.id}&t=${Date.now()}`);
         if (bRes.ok) {
           const bData = await bRes.json();
-          setBreaks(bData);
+          const sorted = bData.sort((a:any, b:any) => new Date(b.start_time).getTime() - new Date(a.start_time).getTime());
+          setBreaks(sorted);
+          window.dispatchEvent(new CustomEvent('streakUpdated', { detail: sorted }));
         }
         setLastSessionData({ score: finalScore, suggestion, duration: breakDuration });
         setShowResultModal(true);
