@@ -6,6 +6,7 @@ from datetime import datetime
 class UserBase(BaseModel):
     email: EmailStr # Valida automáticamente cualquier formato de correo
     full_name: str
+    department: Optional[str] = None
 
 class UserCreate(UserBase):
     password: str

@@ -92,6 +92,7 @@ export default function DashboardPage() {
         const sRes = await fetch('/api/users/me');
         if (!sRes.ok) return;
         const sData = await sRes.json();
+        if (sData.full_name) sData.name = sData.full_name;
         setSession(sData);
         sessionRef.current = sData;
         setProfileName(sData.name || "");
@@ -130,16 +131,24 @@ export default function DashboardPage() {
   const handleUpdateProfile = async () => {
     setIsUpdating(true);
     try {
-      const res = await fetch('/api/auth/profile', {
+      const bodyPayload: any = { full_name: profileName, email: profileEmail, department: profileDept };
+      if (profilePass) bodyPayload.password = profilePass;
+      
+      const res = await fetch('/api/users/me', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: profileName, email: profileEmail, department: profileDept, password: profilePass })
+        body: JSON.stringify(bodyPayload)
       });
       if (res.ok) {
-        const updated = await res.json();
-        setSession(updated);
-        window.dispatchEvent(new CustomEvent('profileUpdated', { detail: updated }));
+        const updatedUser = await res.json();
+        const updatedSession = { ...session, ...updatedUser, name: updatedUser.full_name, department: updatedUser.department };
+        setSession(updatedSession);
+        window.dispatchEvent(new CustomEvent('profileUpdated', { detail: updatedSession }));
         alert("Perfil actualizado");
+        setProfilePass("");
+      } else {
+        const err = await res.json();
+        alert("Error al actualizar: " + (err.detail || err.error || ""));
       }
     } catch (e) { console.error(e); }
     finally { setIsUpdating(false); }

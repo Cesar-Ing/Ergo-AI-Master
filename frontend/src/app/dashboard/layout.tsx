@@ -81,6 +81,7 @@ export default function DashboardLayout({
         }
 
         if (data) {
+          if (data.full_name) data.name = data.full_name;
           setSession(data);
           setLoading(false);
           
@@ -88,7 +89,29 @@ export default function DashboardLayout({
           if (data.id && data.id !== 'manual_user') {
             fetch(`/api/breaks?userId=${data.id}`)
               .then(r => r.json())
-              .then(bData => setStreak(bData.length))
+              .then(bData => {
+                if (!Array.isArray(bData) || bData.length === 0) {
+                  setStreak(0);
+                  return;
+                }
+                const days = Array.from(new Set(bData.map((b: any) => b.start_time.split('T')[0]))).sort().reverse() as string[];
+                const today = new Date().toISOString().split('T')[0];
+                const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+                if (!days.includes(today) && !days.includes(yesterday)) {
+                  setStreak(0);
+                  return;
+                }
+                let count = 0;
+                let checkDate = days.includes(today) ? new Date(today) : new Date(yesterday);
+                while (true) {
+                  const checkStr = checkDate.toISOString().split('T')[0];
+                  if (days.includes(checkStr)) {
+                    count++;
+                    checkDate.setDate(checkDate.getDate() - 1);
+                  } else break;
+                }
+                setStreak(count);
+              })
               .catch(() => {});
           }
         } else {
