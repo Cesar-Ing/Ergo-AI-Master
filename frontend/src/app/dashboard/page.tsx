@@ -57,17 +57,25 @@ export default function DashboardPage() {
 
   const streak = useMemo(() => {
     if (breaks.length === 0) return 0;
-    const days = Array.from(new Set(breaks.map(b => b.start_time.split('T')[0]))).sort().reverse();
-    const today = new Date().toISOString().split('T')[0];
-    const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
-    if (!days.includes(today) && !days.includes(yesterday)) return 0;
+    const getLocalYMD = (d: Date) => {
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    };
+    const days = Array.from(new Set(breaks.map(b => getLocalYMD(new Date(b.start_time))))).sort().reverse();
+    const todayDate = new Date();
+    const yesterdayDate = new Date(Date.now() - 86400000);
+    const todayStr = getLocalYMD(todayDate);
+    const yesterdayStr = getLocalYMD(yesterdayDate);
+    
+    if (!days.includes(todayStr) && !days.includes(yesterdayStr)) return 0;
+    
     let count = 0;
-    let checkDate = days.includes(today) ? new Date(today) : new Date(yesterday);
+    let currentTs = days.includes(todayStr) ? todayDate.getTime() : yesterdayDate.getTime();
+    
     while (true) {
-      const checkStr = checkDate.toISOString().split('T')[0];
+      const checkStr = getLocalYMD(new Date(currentTs));
       if (days.includes(checkStr)) {
         count++;
-        checkDate.setDate(checkDate.getDate() - 1);
+        currentTs -= 86400000;
       } else break;
     }
     return count;
@@ -326,8 +334,14 @@ export default function DashboardPage() {
                    <h3 className="text-xl font-black text-[#0B1B3D] dark:text-white mb-8 text-center">Calendario de Cumplimiento</h3>
                    <div className="grid grid-cols-10 gap-3">
                      {last30Days.map((date, i) => {
-                       const dateStr = date.toISOString().split('T')[0];
-                       const hasBreak = breaks.some(b => b.start_time.startsWith(dateStr));
+                       const getLocalYMD = (d: Date) => {
+                         return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+                       };
+                       const dateStr = getLocalYMD(date);
+                       const hasBreak = breaks.some(b => {
+                           const breakDateStr = getLocalYMD(new Date(b.start_time));
+                           return breakDateStr === dateStr;
+                       });
                        return (
                          <div key={i} title={dateStr} className={`aspect-square rounded-xl flex items-center justify-center text-[10px] font-black border-2 ${hasBreak ? 'bg-emerald-500 border-emerald-600 text-white shadow-md' : 'bg-slate-50 dark:bg-white/5 border-slate-100 dark:border-white/5 text-slate-300'}`}>
                            {date.getDate()}

@@ -87,17 +87,25 @@ export default function DashboardLayout({
           
           const calculateStreak = (bData: any[]) => {
             if (!Array.isArray(bData) || bData.length === 0) return 0;
-            const days = Array.from(new Set(bData.map((b: any) => b.start_time.split('T')[0]))).sort().reverse() as string[];
-            const today = new Date().toISOString().split('T')[0];
-            const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
-            if (!days.includes(today) && !days.includes(yesterday)) return 0;
+            const getLocalYMD = (d: Date) => {
+              return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+            };
+            const days = Array.from(new Set(bData.map((b: any) => getLocalYMD(new Date(b.start_time))))).sort().reverse() as string[];
+            const todayDate = new Date();
+            const yesterdayDate = new Date(Date.now() - 86400000);
+            const todayStr = getLocalYMD(todayDate);
+            const yesterdayStr = getLocalYMD(yesterdayDate);
+            
+            if (!days.includes(todayStr) && !days.includes(yesterdayStr)) return 0;
+            
             let count = 0;
-            let checkDate = days.includes(today) ? new Date(today) : new Date(yesterday);
+            let currentTs = days.includes(todayStr) ? todayDate.getTime() : yesterdayDate.getTime();
+            
             while (true) {
-              const checkStr = checkDate.toISOString().split('T')[0];
+              const checkStr = getLocalYMD(new Date(currentTs));
               if (days.includes(checkStr)) {
                 count++;
-                checkDate.setDate(checkDate.getDate() - 1);
+                currentTs -= 86400000;
               } else break;
             }
             return count;
@@ -128,17 +136,25 @@ export default function DashboardLayout({
            // Si recibe el array de breaks, calcula la racha
            const calculateStreak = (bData: any[]) => {
               if (!bData || bData.length === 0) return 0;
-              const days = Array.from(new Set(bData.map((b: any) => b.start_time.split('T')[0]))).sort().reverse() as string[];
-              const today = new Date().toISOString().split('T')[0];
-              const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
-              if (!days.includes(today) && !days.includes(yesterday)) return 0;
+              const getLocalYMD = (d: Date) => {
+                return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+              };
+              const days = Array.from(new Set(bData.map((b: any) => getLocalYMD(new Date(b.start_time))))).sort().reverse() as string[];
+              const todayDate = new Date();
+              const yesterdayDate = new Date(Date.now() - 86400000);
+              const todayStr = getLocalYMD(todayDate);
+              const yesterdayStr = getLocalYMD(yesterdayDate);
+              
+              if (!days.includes(todayStr) && !days.includes(yesterdayStr)) return 0;
+              
               let count = 0;
-              let checkDate = days.includes(today) ? new Date(today) : new Date(yesterday);
+              let currentTs = days.includes(todayStr) ? todayDate.getTime() : yesterdayDate.getTime();
+              
               while (true) {
-                const checkStr = checkDate.toISOString().split('T')[0];
+                const checkStr = getLocalYMD(new Date(currentTs));
                 if (days.includes(checkStr)) {
                   count++;
-                  checkDate.setDate(checkDate.getDate() - 1);
+                  currentTs -= 86400000;
                 } else break;
               }
               return count;
