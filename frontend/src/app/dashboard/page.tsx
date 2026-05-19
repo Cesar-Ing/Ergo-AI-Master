@@ -413,15 +413,10 @@ export default function DashboardPage() {
           setIsPostureCorrect(isCorrect);
 
           if (isCorrect) {
-            exerciseProgressRef.current = Math.min(100, exerciseProgressRef.current + 4);
+            exerciseProgressRef.current = Math.min(100, exerciseProgressRef.current + 10);
             setExerciseProgress(Math.round(exerciseProgressRef.current));
-            
-            if (exerciseProgressRef.current >= 100 && !exerciseCompletedRef.current) {
-              exerciseCompletedRef.current = true;
-              setExerciseCompleted(true);
-            }
           } else {
-            exerciseProgressRef.current = Math.max(0, exerciseProgressRef.current - 1);
+            exerciseProgressRef.current = Math.max(0, exerciseProgressRef.current - 10);
             setExerciseProgress(Math.round(exerciseProgressRef.current));
           }
         }
