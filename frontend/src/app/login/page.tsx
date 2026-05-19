@@ -39,15 +39,17 @@ function LoginContent() {
         localStorage.setItem("ergoai_user_email", session.user?.email || "");
         localStorage.setItem("ergoai_user_role", role);
         
+        const targetUrl = role === 'admin' ? '/dashboard/admin' : role === 'specialist' ? '/dashboard/reports' : '/dashboard';
+        
         // Configurar la cookie HttpOnly en el navegador
         fetch("/api/auth/set-token", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ token: backendToken })
         }).then(() => {
-          router.push("/dashboard");
+          router.push(targetUrl);
         }).catch(() => {
-          router.push("/dashboard");
+          router.push(targetUrl);
         });
       }
     }
@@ -77,7 +79,8 @@ function LoginContent() {
         localStorage.setItem("ergoai_user_id", data.id);
         localStorage.setItem("ergoai_user_email", data.email);
         localStorage.setItem("ergoai_user_role", data.role);
-        router.push("/dashboard");
+        const targetUrl = data.role === 'admin' ? '/dashboard/admin' : data.role === 'specialist' ? '/dashboard/reports' : '/dashboard';
+        router.push(targetUrl);
       } else {
         setError(data.error || "Error al iniciar sesión");
       }

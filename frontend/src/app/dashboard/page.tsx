@@ -217,6 +217,15 @@ export default function DashboardPage() {
         
         if (!sData) return;
         
+        if (sData.role === 'admin') {
+          window.location.href = '/dashboard/admin';
+          return;
+        }
+        if (sData.role === 'specialist') {
+          window.location.href = '/dashboard/reports';
+          return;
+        }
+
         if (sData.full_name) sData.name = sData.full_name;
         setSession(sData);
         sessionRef.current = sData;
@@ -600,6 +609,14 @@ export default function DashboardPage() {
   const exerciseBreaks = breaks.filter(b => b.metrics?.type === 'exercise');
 
   if (!mounted) return null;
+  
+  if (session && session.role !== 'user') {
+    return (
+      <div className="h-screen w-full bg-[#050B1A] flex items-center justify-center">
+         <div className="w-12 h-12 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8 pb-20 animate-in fade-in duration-700">
