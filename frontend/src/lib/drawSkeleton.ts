@@ -1,13 +1,27 @@
 import { Keypoint } from './ergonomics';
 
-export function drawSkeleton(keypoints: Keypoint[], ctx: CanvasRenderingContext2D, width: number, height: number) {
+export function drawSkeleton(
+  keypoints: Keypoint[], 
+  ctx: CanvasRenderingContext2D, 
+  width: number, 
+  height: number,
+  isExerciseMode: boolean = false
+) {
   const importantKeypoints = [
     'nose', 'left_eye', 'right_eye', 'left_ear', 'right_ear', 
     'left_shoulder', 'right_shoulder'
   ];
 
+  if (isExerciseMode) {
+    importantKeypoints.push(
+      'left_elbow', 'right_elbow', 'left_wrist', 'right_wrist',
+      'left_hip', 'right_hip', 'left_knee', 'right_knee',
+      'left_ankle', 'right_ankle'
+    );
+  }
+
   const validKeypoints = keypoints.filter(k => 
-    (k.score || k.visibility || 0) > 0.4 && k.name && importantKeypoints.includes(k.name)
+    (k.score || k.visibility || 0) > 0.3 && k.name && importantKeypoints.includes(k.name)
   );
 
   const leftS = validKeypoints.find(k => k.name === 'left_shoulder');
@@ -64,6 +78,25 @@ export function drawSkeleton(keypoints: Keypoint[], ctx: CanvasRenderingContext2
   drawCyberLine('left_shoulder', 'right_shoulder');
   drawCyberLine('left_ear', 'left_eye');
   drawCyberLine('right_ear', 'right_eye');
+
+  if (isExerciseMode) {
+    // Brazos
+    drawCyberLine('left_shoulder', 'left_elbow');
+    drawCyberLine('right_shoulder', 'right_elbow');
+    drawCyberLine('left_elbow', 'left_wrist');
+    drawCyberLine('right_elbow', 'right_wrist');
+
+    // Torso y caderas
+    drawCyberLine('left_shoulder', 'left_hip');
+    drawCyberLine('right_shoulder', 'right_hip');
+    drawCyberLine('left_hip', 'right_hip');
+
+    // Piernas
+    drawCyberLine('left_hip', 'left_knee');
+    drawCyberLine('right_hip', 'right_knee');
+    drawCyberLine('left_knee', 'left_ankle');
+    drawCyberLine('right_knee', 'right_ankle');
+  }
 
   // Connect nose to shoulders (Virtual spine/neck)
   if (nose && leftS && rightS) {

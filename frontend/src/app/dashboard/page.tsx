@@ -14,6 +14,30 @@ declare global {
   }
 }
 
+const EXERCISES = {
+  neck_stretch: {
+    id: 'neck_stretch',
+    title: 'Estiramiento Lateral de Cuello',
+    description: 'Inclina tu cabeza suavemente hacia la izquierda o derecha para liberar tensión cervical.',
+    instruction: 'Inclina la cabeza lateralmente hasta sentir el estiramiento.',
+    icon: '🧘'
+  },
+  back_stretch: {
+    id: 'back_stretch',
+    title: 'Estiramiento de Espalda Alta',
+    description: 'Eleva ambos brazos completamente por encima de tu cabeza para alinear tu columna.',
+    instruction: 'Alza ambos brazos bien arriba sobre tu cabeza.',
+    icon: '⚡'
+  },
+  shoulder_shrug: {
+    id: 'shoulder_shrug',
+    title: 'Rotación de Hombros',
+    description: 'Eleva tus hombros hacia arriba (encogimiento) y mantenlos para liberar la carga del trapecio.',
+    instruction: 'Eleva tus hombros hacia tus orejas con fuerza.',
+    icon: '💪'
+  }
+};
+
 export default function DashboardPage() {
   const [mounted, setMounted] = useState(false);
   const [activeTab, setActiveTab] = useState<'calendar' | 'camera' | 'profile'>('calendar');
@@ -44,6 +68,14 @@ export default function DashboardPage() {
   const [selectedBreak, setSelectedBreak] = useState<any>(null);
   const [showResultModal, setShowResultModal] = useState(false);
   const [lastSessionData, setLastSessionData] = useState<any>(null);
+  
+  // Variables del Entrenador de Ejercicios Correctivos IA
+  const [exerciseMode, setExerciseMode] = useState(false);
+  const [selectedExercise, setSelectedExercise] = useState<any>(null);
+  const [exerciseProgress, setExerciseProgress] = useState(0);
+  const [exerciseCompleted, setExerciseCompleted] = useState(false);
+  const exerciseProgressRef = useRef(0);
+  const exerciseCompletedRef = useRef(false);
 
   const [profileName, setProfileName] = useState("");
   const [profileEmail, setProfileEmail] = useState("");
@@ -193,6 +225,29 @@ export default function DashboardPage() {
     finally { setIsUpdating(false); }
   };
 
+  const exerciseModeRef = useRef(false);
+  const selectedExerciseRef = useRef<any>(null);
+
+  useEffect(() => {
+    exerciseModeRef.current = exerciseMode;
+  }, [exerciseMode]);
+
+  useEffect(() => {
+    selectedExerciseRef.current = selectedExercise;
+  }, [selectedExercise]);
+
+  const exitExerciseMode = () => {
+    setExerciseMode(false);
+    setSelectedExercise(null);
+    setExerciseProgress(0);
+    setExerciseCompleted(false);
+    exerciseProgressRef.current = 0;
+    exerciseCompletedRef.current = false;
+    setIsCameraActive(false);
+    setIsCameraLoading(false);
+    if (cameraRef.current) cameraRef.current.stop();
+  };
+
   const startIA = () => {
     if (!(window as any).Pose || !videoRef.current) return;
     const pose = new (window as any).Pose({
@@ -205,11 +260,16 @@ export default function DashboardPage() {
       const ctx = canvasRef.current.getContext('2d');
       if (!ctx) return;
       ctx.clearRect(0,0,640,480);
-      // Mapear índices de MediaPipe a nombres para que drawSkeleton los reconozca
+      // Mapear índices de MediaPipe a nombres para que drawSkeleton los reconozca (cuerpo completo)
       const namedLandmarks = results.poseLandmarks.map((point: any, index: number) => {
         const names: { [key: number]: string } = {
           0: 'nose', 7: 'left_ear', 8: 'right_ear', 1: 'left_eye', 4: 'right_eye',
-          11: 'left_shoulder', 12: 'right_shoulder'
+          11: 'left_shoulder', 12: 'right_shoulder',
+          13: 'left_elbow', 14: 'right_elbow',
+          15: 'left_wrist', 16: 'right_wrist',
+          23: 'left_hip', 24: 'right_hip',
+          25: 'left_knee', 26: 'right_knee',
+          27: 'left_ankle', 28: 'right_ankle'
         };
         // Asegurar que pasamos visibility o score para que drawSkeleton filtre bien
         return { 
@@ -219,16 +279,95 @@ export default function DashboardPage() {
         };
       });
 
-      drawSkeleton(namedLandmarks, ctx, 640, 480);
-      const evaluation = evaluatePosture(namedLandmarks, thresholdsRef.current);
-      
-      // Mostrar feedback siempre que la cámara esté activa
-      setPostureScore(evaluation.score);
-      setBiometricState(evaluation.state);
-      setSuggestion(evaluation.suggestion);
+      if (!exerciseModeRef.current) {
+        drawSkeleton(namedLandmarks, ctx, 640, 480, false);
+        const evaluation = evaluatePosture(namedLandmarks, thresholdsRef.current);
+        
+        // Mostrar feedback siempre que la cámara esté activa
+        setPostureScore(evaluation.score);
+        setBiometricState(evaluation.state);
+        setSuggestion(evaluation.suggestion);
 
-      if (isBreakActiveRef.current) {
-         sessionScoresRef.current.push(evaluation.score);
+        if (isBreakActiveRef.current) {
+           sessionScoresRef.current.push(evaluation.score);
+        }
+      } else {
+        const currentEx = selectedExerciseRef.current;
+        drawSkeleton(namedLandmarks, ctx, 640, 480, true);
+        
+        if (currentEx) {
+          if (exerciseCompletedRef.current) return;
+
+          const find = (name: string) => namedLandmarks.find((k: any) => k.name === name);
+          const nose = find('nose');
+          const leftS = find('left_shoulder');
+          const rightS = find('right_shoulder');
+          const leftW = find('left_wrist');
+          const rightW = find('right_wrist');
+
+          let isCorrect = false;
+          let guideMsg = "";
+
+          if (currentEx.id === 'neck_stretch') {
+            if (nose && leftS && rightS) {
+              const shoulderWidth = Math.abs(leftS.x - rightS.x);
+              const midX = (leftS.x + rightS.x) / 2;
+              const neckOffset = Math.abs(nose.x - midX) / (shoulderWidth || 0.1);
+
+              if (neckOffset > 0.22) {
+                isCorrect = true;
+                guideMsg = "¡Excelente inclinación! Mantén la posición...";
+              } else {
+                guideMsg = "Inclina tu cabeza suavemente hacia un hombro de manera lateral.";
+              }
+            } else {
+              guideMsg = "Alinea tu cuerpo frente a la cámara.";
+            }
+          } 
+          else if (currentEx.id === 'back_stretch') {
+            if (leftW && rightW && leftS && rightS) {
+              if (leftW.y < leftS.y && rightW.y < rightS.y) {
+                isCorrect = true;
+                guideMsg = "¡Perfecto! Brazos alzados. Sostén el estiramiento...";
+              } else {
+                guideMsg = "Eleva ambos brazos bien alto sobre tu cabeza.";
+              }
+            } else {
+              guideMsg = "Asegúrate de que tus brazos sean visibles en la cámara.";
+            }
+          }
+          else if (currentEx.id === 'shoulder_shrug') {
+            if (nose && leftS && rightS) {
+              const shoulderWidth = Math.abs(leftS.x - rightS.x);
+              const midY = (leftS.y + rightS.y) / 2;
+              const headHeight = Math.abs(nose.y - midY) / (shoulderWidth || 0.1);
+
+              if (headHeight < 0.38) {
+                isCorrect = true;
+                guideMsg = "¡Hombros arriba! Sostén esa contracción...";
+              } else {
+                guideMsg = "Eleva tus hombros hacia arriba con fuerza.";
+              }
+            } else {
+              guideMsg = "Alinea tus hombros frente a la cámara.";
+            }
+          }
+
+          setSuggestion(guideMsg);
+
+          if (isCorrect) {
+            exerciseProgressRef.current = Math.min(100, exerciseProgressRef.current + 4);
+            setExerciseProgress(Math.round(exerciseProgressRef.current));
+            
+            if (exerciseProgressRef.current >= 100 && !exerciseCompletedRef.current) {
+              exerciseCompletedRef.current = true;
+              setExerciseCompleted(true);
+            }
+          } else {
+            exerciseProgressRef.current = Math.max(0, exerciseProgressRef.current - 1);
+            setExerciseProgress(Math.round(exerciseProgressRef.current));
+          }
+        }
       }
     });
     poseRef.current = pose;
@@ -443,6 +582,13 @@ export default function DashboardPage() {
                          </span>
                       </div>
                    )}
+
+                   {exerciseMode && !isCameraLoading && (
+                      <div className="absolute top-10 right-10 z-30 bg-[#0B1B3D]/90 backdrop-blur-xl px-8 py-4 rounded-[2rem] border border-emerald-500/30 shadow-2xl text-center">
+                         <span className="text-[8px] font-black text-emerald-400 uppercase tracking-[0.3em] block mb-2">PROGRESO REHAB</span>
+                         <span className="text-4xl font-mono font-black text-white">{exerciseProgress}%</span>
+                      </div>
+                   )}
                    
                    {isCameraLoading && (
                       <div className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-[#050f24]/90 backdrop-blur-sm">
@@ -465,7 +611,59 @@ export default function DashboardPage() {
                )}
             </div>
             <div className="space-y-6">
-               {!isBreakActive ? (
+               {exerciseMode ? (
+                  <div className="bg-white dark:bg-[#0B1B3D]/50 p-10 rounded-[3rem] border border-slate-100 dark:border-white/5 shadow-xl text-center relative overflow-hidden">
+                     <div className="absolute top-0 left-0 w-full h-2 bg-slate-100 dark:bg-white/5">
+                       <div className="h-full bg-emerald-500 transition-all duration-300" style={{ width: `${exerciseProgress}%` }}></div>
+                     </div>
+                     <span className="text-[9px] font-black text-emerald-500 uppercase tracking-[0.2em] block mb-2">Entrenador de Rehabilitación IA</span>
+                     <h3 className="text-2xl font-black text-[#0B1B3D] dark:text-white mb-6">{selectedExercise?.title}</h3>
+                     
+                     {/* Guía Visual */}
+                     <div className="bg-slate-50 dark:bg-white/5 p-6 rounded-2xl border border-slate-100 dark:border-white/10 mb-8 text-left">
+                       <div className="flex gap-4 items-center mb-4">
+                         <span className="text-4xl">{selectedExercise?.icon}</span>
+                         <div>
+                           <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Tu objetivo</p>
+                           <p className="text-xs font-bold text-slate-500 dark:text-blue-200/80">{selectedExercise?.instruction}</p>
+                         </div>
+                       </div>
+                       <p className="text-xs text-slate-400 leading-relaxed italic">{selectedExercise?.description}</p>
+                     </div>
+
+                     {/* Progreso Circular o Barra Pro */}
+                     <div className="bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 rounded-[2.5rem] p-8 mb-8">
+                       <div className="text-5xl font-mono font-black text-emerald-500 mb-2">{exerciseProgress}%</div>
+                       <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-4">PROGRESO DE ESTIRAMIENTO</p>
+                       <div className="w-full h-4 bg-slate-200 dark:bg-white/10 rounded-full overflow-hidden shadow-inner p-0.5">
+                         <div className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-teal-400 transition-all duration-200" style={{ width: `${exerciseProgress}%` }}></div>
+                       </div>
+                     </div>
+
+                     {/* Mensaje Dinámico */}
+                     <div className="mb-8">
+                       {exerciseCompleted ? (
+                         <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl text-emerald-400 text-sm font-black animate-bounce">
+                           🏆 ¡REHABILITACIÓN COMPLETADA!
+                         </div>
+                       ) : (
+                         <div className="text-xs font-bold text-slate-400 animate-pulse">
+                           {exerciseProgress > 0 ? "¡Sigue sosteniendo la posición!" : "Alinea los puntos verdes y realiza el ejercicio."}
+                         </div>
+                       )}
+                     </div>
+
+                     {exerciseCompleted ? (
+                       <Button onClick={exitExerciseMode} className="w-full h-18 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-lg rounded-[2rem] shadow-2xl hover:scale-105 transition-all">
+                         FINALIZAR EJERCICIO ⚡
+                       </Button>
+                     ) : (
+                       <Button onClick={exitExerciseMode} className="w-full h-16 bg-slate-100 hover:bg-slate-200 dark:bg-white/5 dark:hover:bg-white/10 text-slate-700 dark:text-white font-bold rounded-[1.8rem] transition-all">
+                         SALIR
+                       </Button>
+                     )}
+                  </div>
+               ) : !isBreakActive ? (
                   <div className="bg-white dark:bg-[#0B1B3D]/50 p-10 rounded-[3rem] border border-slate-100 dark:border-white/5 shadow-xl text-center">
                      <h3 className="text-xl font-black text-[#0B1B3D] dark:text-white mb-8">Entrenamiento IA</h3>
                      <div className="space-y-6 mb-10 text-left">
@@ -550,17 +748,58 @@ export default function DashboardPage() {
         )}
       </div>
 
-      {showResultModal && lastSessionData && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-[#0B1B3D]/80 backdrop-blur-md animate-in fade-in duration-500">
-          <div className="bg-white dark:bg-[#0B1B3D] w-full max-w-lg rounded-[4rem] p-16 text-center border border-white/10 animate-in zoom-in duration-500 shadow-[0_0_80px_rgba(16,185,129,0.3)]">
-             <div className="text-8xl font-black text-emerald-500 mb-4 tracking-tighter">{lastSessionData.score}%</div>
-             <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em] mb-12">Calificación ErgoIA</p>
-             <h2 className="text-4xl font-black text-[#0B1B3D] dark:text-white mb-8 tracking-tight">¡Sesión Exitosa!</h2>
-             <p className="text-sm font-bold text-slate-500 dark:text-blue-200/60 leading-relaxed mb-12 max-w-xs mx-auto">{lastSessionData.suggestion}</p>
-             <Button onClick={() => setShowResultModal(false)} className="w-full h-18 bg-emerald-600 text-white font-black text-lg rounded-[2rem] shadow-xl hover:scale-105 transition-all">GENIAL</Button>
+      {showResultModal && lastSessionData && (() => {
+        const getRecommendedExercise = (score: number) => {
+          if (score < 75) {
+            return EXERCISES.back_stretch;
+          } else if (score < 90) {
+            return EXERCISES.neck_stretch;
+          } else {
+            return EXERCISES.shoulder_shrug;
+          }
+        };
+        const recommendedEx = getRecommendedExercise(lastSessionData.score);
+        return (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-[#0B1B3D]/80 backdrop-blur-md animate-in fade-in duration-500">
+            <div className="bg-white dark:bg-[#0B1B3D] w-full max-w-xl rounded-[4rem] p-12 text-center border border-white/10 animate-in zoom-in duration-500 shadow-[0_0_80px_rgba(16,185,129,0.3)]">
+               <div className="text-7xl font-black text-emerald-500 mb-2 tracking-tighter">{lastSessionData.score}%</div>
+               <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.4em] mb-6">Calificación ErgoIA</p>
+               <h2 className="text-3xl font-black text-[#0B1B3D] dark:text-white mb-4 tracking-tight">¡Sesión Exitosa!</h2>
+               <p className="text-sm font-bold text-slate-500 dark:text-blue-200/60 leading-relaxed mb-6 max-w-sm mx-auto">{lastSessionData.suggestion}</p>
+               
+               {/* Tarjeta de Rehabilitación Recomendada */}
+               <div className="bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 rounded-[2.5rem] p-6 mb-8 text-left relative overflow-hidden">
+                 <div className="absolute right-6 top-6 text-5xl opacity-20">{recommendedEx.icon}</div>
+                 <span className="text-[8px] font-black text-emerald-500 uppercase tracking-[0.2em] block mb-1">REHABILITACIÓN RECOMENDADA POR IA</span>
+                 <h4 className="text-lg font-black text-[#0B1B3D] dark:text-white mb-2">{recommendedEx.title}</h4>
+                 <p className="text-xs text-slate-500 dark:text-blue-200/60 leading-relaxed">{recommendedEx.description}</p>
+               </div>
+
+               <div className="flex flex-col sm:flex-row gap-4">
+                 <Button onClick={() => {
+                   setShowResultModal(false);
+                   setExerciseMode(true);
+                   setSelectedExercise(recommendedEx);
+                   setExerciseProgress(0);
+                   setExerciseCompleted(false);
+                   exerciseProgressRef.current = 0;
+                   exerciseCompletedRef.current = false;
+                   
+                   // Encender la cámara e iniciar
+                   setIsCameraActive(true);
+                   setIsCameraLoading(true);
+                   setTimeout(startIA, 1000);
+                 }} className="flex-1 h-16 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-sm rounded-[1.8rem] shadow-xl hover:scale-105 transition-all flex items-center justify-center gap-2">
+                   INICIAR REHABILITACIÓN IA ⚡
+                 </Button>
+                 <Button onClick={() => setShowResultModal(false)} className="flex-1 h-16 bg-slate-100 hover:bg-slate-200 dark:bg-white/5 dark:hover:bg-white/10 text-slate-700 dark:text-white font-black text-sm rounded-[1.8rem] transition-all">
+                   CERRAR
+                 </Button>
+               </div>
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {selectedPrescription && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-[#0B1B3D]/80 backdrop-blur-md animate-in fade-in duration-300">
