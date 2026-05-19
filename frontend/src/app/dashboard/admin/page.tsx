@@ -18,6 +18,10 @@ export default function AdminPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [formData, setFormData] = useState({ full_name: '', email: '', password: '', role: 'user', department: 'General' });
 
+  const [detailedActivity, setDetailedActivity] = useState<any[]>([]);
+  const [selectedDayFilter, setSelectedDayFilter] = useState<string | null>(null);
+  const [loadingDetails, setLoadingDetails] = useState(false);
+
   useEffect(() => {
     setMounted(true);
     refreshUsers();
@@ -25,17 +29,33 @@ export default function AdminPage() {
 
   const refreshUsers = async () => {
     try {
-      const [userData, activityData, configData] = await Promise.all([
+      const [userData, activityData, configData, detailsData] = await Promise.all([
         apiFetch('/users'),
         apiFetch('/stats/global-activity'),
-        apiFetch('/config')
+        apiFetch('/config'),
+        apiFetch('/stats/activity-details')
       ]);
       
       if (userData?.users) setUsers(userData.users);
       if (activityData) setGlobalActivity(activityData);
       if (configData) setConfigs(configData);
+      if (detailsData) setDetailedActivity(detailsData);
     } catch (e) { 
       console.error("Admin Load Error:", e); 
+    }
+  };
+
+  const fetchDetailsForDay = async (day: string | null) => {
+    setLoadingDetails(true);
+    setSelectedDayFilter(day);
+    try {
+      const url = day ? `/stats/activity-details?day=${day}` : '/stats/activity-details';
+      const detailsData = await apiFetch(url);
+      if (detailsData) setDetailedActivity(detailsData);
+    } catch (e) {
+      console.error("Error loading activity details:", e);
+    } finally {
+      setLoadingDetails(false);
     }
   };
 
@@ -219,17 +239,148 @@ export default function AdminPage() {
       </div>
 
       {activeTab === "activity" && (
-        <div className="bg-white dark:bg-[#0B1B3D]/50 p-12 rounded-[4rem] border border-slate-100 dark:border-white/5 shadow-xl animate-in slide-in-from-bottom-10 duration-500">
-           <h3 className="text-2xl font-black text-[#0B1B3D] dark:text-white mb-10 text-center">Actividad Global de la Red</h3>
-           <div className="flex flex-wrap gap-8 justify-center">
-              {globalActivity.map((a, i) => (
-                <div key={i} className="flex flex-col items-center bg-slate-50 dark:bg-white/5 p-10 rounded-[3rem] border border-slate-100 dark:border-white/5 w-48 shadow-inner hover:scale-110 transition-all cursor-pointer">
-                   <p className="text-[12px] font-black text-slate-400 uppercase tracking-widest">{new Date(a.day).toLocaleDateString([], {day:'2-digit', month:'short'})}</p>
-                   <p className="text-6xl font-black text-[#0B1B3D] dark:text-white mt-4">{a.count}</p>
-                   <p className="text-[10px] font-black text-indigo-600 uppercase mt-4">Usuarios Activos</p>
+        <div className="space-y-10">
+          {/* Tarjetas de Días */}
+          <div className="bg-white dark:bg-[#0B1B3D]/50 p-12 rounded-[4rem] border border-slate-100 dark:border-white/5 shadow-xl animate-in slide-in-from-bottom-10 duration-500">
+             <h3 className="text-2xl font-black text-[#0B1B3D] dark:text-white mb-2 text-center">Actividad Global de la Red</h3>
+             <p className="text-xs text-slate-400 dark:text-blue-200/40 font-bold mb-8 text-center uppercase tracking-widest">
+               Haz clic en un día para filtrar y ver el detalle de los usuarios activos.
+             </p>
+             <div className="flex flex-wrap gap-8 justify-center">
+                {/* Botón para resetear filtro */}
+                <div 
+                  onClick={() => fetchDetailsForDay(null)}
+                  className={`flex flex-col items-center justify-center p-10 rounded-[3rem] border w-48 shadow-inner hover:scale-105 transition-all cursor-pointer ${!selectedDayFilter ? 'bg-[#0B1B3D] text-white border-indigo-500/50 shadow-[0_0_25px_rgba(99,102,241,0.2)]' : 'bg-slate-50 dark:bg-white/5 border-slate-100 dark:border-white/5 text-slate-500 dark:text-blue-200/60'}`}
+                >
+                   <p className="text-4xl">🌐</p>
+                   <p className="text-[10px] font-black uppercase mt-4 tracking-widest">Ver Recientes</p>
                 </div>
-              ))}
-           </div>
+
+                {globalActivity.map((a, i) => {
+                  const isSelected = selectedDayFilter === a.day;
+                  // Formatear fecha
+                  const dateParts = a.day.split('-');
+                  const localDate = new Date(parseInt(dateParts[0]), parseInt(dateParts[1]) - 1, parseInt(dateParts[2]));
+                  const formattedDay = localDate.toLocaleDateString([], {day:'2-digit', month:'short'});
+                  return (
+                    <div 
+                      key={i} 
+                      onClick={() => fetchDetailsForDay(isSelected ? null : a.day)}
+                      className={`flex flex-col items-center bg-slate-50 dark:bg-white/5 p-10 rounded-[3rem] border w-48 shadow-inner hover:scale-105 transition-all cursor-pointer relative overflow-hidden group ${isSelected ? 'border-emerald-500/80 bg-emerald-500/5 dark:bg-emerald-950/20 shadow-[0_0_30px_rgba(16,185,129,0.3)] ring-2 ring-emerald-500/30' : 'border-slate-100 dark:border-white/5 hover:border-slate-300 dark:hover:border-white/20'}`}
+                    >
+                       {isSelected && (
+                         <div className="absolute top-0 right-0 bg-emerald-500 text-[8px] font-black text-white px-3 py-1 rounded-bl-xl tracking-widest uppercase">FILTRADO</div>
+                       )}
+                       <p className="text-[12px] font-black text-slate-400 dark:text-blue-200/40 uppercase tracking-widest group-hover:text-indigo-400 transition-colors">{formattedDay}</p>
+                       <p className="text-6xl font-black text-[#0B1B3D] dark:text-white mt-4">{a.count}</p>
+                       <p className="text-[10px] font-black text-indigo-600 dark:text-indigo-400 uppercase mt-4">Usuarios Activos</p>
+                    </div>
+                  );
+                })}
+             </div>
+          </div>
+
+          {/* Tabla de Actividad Detallada */}
+          <div className="bg-white dark:bg-[#0B1B3D]/50 rounded-[4rem] border border-slate-100 dark:border-white/5 shadow-xl overflow-hidden animate-in slide-in-from-bottom-10 duration-500">
+             <div className="p-10 border-b border-slate-100 dark:border-white/5 flex flex-col md:flex-row justify-between items-center gap-4 bg-slate-50 dark:bg-black/10">
+                <div>
+                   <h4 className="text-2xl font-black text-[#0B1B3D] dark:text-white tracking-tight">
+                     {selectedDayFilter ? `Detalle de Actividad del ${new Date(parseInt(selectedDayFilter.split('-')[0]), parseInt(selectedDayFilter.split('-')[1]) - 1, parseInt(selectedDayFilter.split('-')[2])).toLocaleDateString([], {day:'numeric', month:'long', year:'numeric'})}` : 'Historial de Actividades Recientes'}
+                   </h4>
+                   <p className="text-xs text-slate-400 dark:text-blue-200/40 font-bold mt-1 uppercase tracking-widest">
+                     Sesiones de Análisis Biomecánico y Ejercicios Correctivos registrados por los usuarios.
+                   </p>
+                </div>
+                {selectedDayFilter && (
+                   <button 
+                     onClick={() => fetchDetailsForDay(null)}
+                     className="px-6 py-2.5 bg-slate-200/50 hover:bg-slate-200 dark:bg-white/10 dark:hover:bg-white/20 text-slate-600 dark:text-white text-[10px] font-black uppercase tracking-widest rounded-2xl transition-all"
+                   >
+                     ❌ QUITAR FILTRO
+                   </button>
+                )}
+             </div>
+
+             {loadingDetails ? (
+                <div className="py-20 flex flex-col items-center justify-center gap-4">
+                   <div className="w-10 h-10 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Consultando logs de red...</p>
+                </div>
+             ) : detailedActivity.length === 0 ? (
+                <div className="py-20 text-center">
+                   <p className="text-4xl mb-4">💤</p>
+                   <p className="text-lg font-black text-slate-500 dark:text-blue-200/40 uppercase tracking-widest">Sin actividad registrada</p>
+                   <p className="text-xs text-slate-400 dark:text-slate-500 font-bold mt-1">Ningún colaborador ha realizado entrenamientos o monitoreos con este filtro.</p>
+                </div>
+             ) : (
+                <div className="overflow-x-auto">
+                   <table className="w-full text-left border-collapse">
+                      <thead>
+                         <tr className="bg-slate-100/50 dark:bg-black/25 border-b border-slate-100 dark:border-white/5">
+                            <th className="px-10 py-6 text-[10px] font-black text-slate-400 dark:text-blue-200/40 uppercase tracking-[0.25em]">Colaborador</th>
+                            <th className="px-10 py-6 text-[10px] font-black text-slate-400 dark:text-blue-200/40 uppercase tracking-[0.25em]">Organización / Depto</th>
+                            <th className="px-10 py-6 text-[10px] font-black text-slate-400 dark:text-blue-200/40 uppercase tracking-[0.25em]">Sesión / Actividad</th>
+                            <th className="px-10 py-6 text-[10px] font-black text-slate-400 dark:text-blue-200/40 uppercase tracking-[0.25em]">Duración</th>
+                            <th className="px-10 py-6 text-[10px] font-black text-slate-400 dark:text-blue-200/40 uppercase tracking-[0.25em] text-center">Score Promedio</th>
+                            <th className="px-10 py-6 text-[10px] font-black text-slate-400 dark:text-blue-200/40 uppercase tracking-[0.25em] text-right">Registro de Hora</th>
+                         </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-50 dark:divide-white/5">
+                         {detailedActivity.map((act) => {
+                            const isExercise = act.metrics?.type === 'exercise';
+                            const score = act.score;
+                            
+                            // Determinar color de badge de score
+                            let scoreBadgeColor = "bg-emerald-500 text-white shadow-emerald-500/10";
+                            if (score < 50) {
+                               scoreBadgeColor = "bg-red-500 text-white shadow-red-500/10";
+                            } else if (score < 75) {
+                               scoreBadgeColor = "bg-amber-500 text-slate-900 shadow-amber-500/10";
+                            }
+
+                            return (
+                               <tr key={act.id} className="hover:bg-slate-50 dark:hover:bg-white/5 transition-all duration-200">
+                                  <td className="px-10 py-6">
+                                     <p className="font-black text-[#0B1B3D] dark:text-white text-base tracking-tight">{act.full_name}</p>
+                                     <p className="text-[10px] text-slate-400 dark:text-blue-200/30 font-bold uppercase mt-0.5">{act.email}</p>
+                                  </td>
+                                  <td className="px-10 py-6">
+                                     <span className="px-4 py-1.5 rounded-lg bg-indigo-500/5 dark:bg-white/5 border border-indigo-500/10 dark:border-white/10 text-[9px] font-black text-indigo-600 dark:text-blue-300 uppercase tracking-wider">
+                                        💼 {act.department}
+                                     </span>
+                                  </td>
+                                  <td className="px-10 py-6">
+                                     <div className="flex items-center gap-2">
+                                        <span className="text-base">{isExercise ? "🏋️" : "🔬"}</span>
+                                        <div>
+                                           <p className="text-xs font-black text-slate-800 dark:text-blue-200 tracking-wide">
+                                              {isExercise ? "Entrenamiento Correctivo" : "Análisis de Postura"}
+                                           </p>
+                                           <p className="text-[9px] text-slate-400 dark:text-blue-200/30 font-bold mt-0.5">
+                                              {act.metrics?.exerciseTitle || act.metrics?.postureState || (isExercise ? "Ejercicios sugeridos" : "Monitoreo Activo")}
+                                           </p>
+                                        </div>
+                                     </div>
+                                  </td>
+                                  <td className="px-10 py-6 font-bold text-slate-600 dark:text-blue-200/80 text-xs">
+                                     ⏱️ {act.duration}
+                                  </td>
+                                  <td className="px-10 py-6 text-center">
+                                     <span className={`inline-block px-5 py-2.5 rounded-2xl text-xs font-black tracking-widest uppercase shadow-sm ${scoreBadgeColor}`}>
+                                        {score}%
+                                     </span>
+                                  </td>
+                                  <td className="px-10 py-6 text-right font-bold text-slate-400 dark:text-blue-200/40 text-[10px] tracking-wider">
+                                     {new Date(act.start_time).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'})}
+                                  </td>
+                               </tr>
+                            );
+                         })}
+                      </tbody>
+                   </table>
+                </div>
+             )}
+          </div>
         </div>
       )}
 

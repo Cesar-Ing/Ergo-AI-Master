@@ -73,6 +73,59 @@ def get_global_activity(db: Session = Depends(get_db), current_user: User = Depe
     
     return [{"day": str(a.day), "count": a.count} for a in activity]
 
+@router.get("/activity-details")
+def get_activity_details(day: str = None, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    """
+    Obtiene la lista detallada de actividades y usuarios que ingresaron y realizaron sesiones en un día específico.
+    Si no se proporciona un día, devuelve la actividad de hoy de forma predeterminada.
+    """
+    query = db.query(
+        ActiveBreak.id,
+        ActiveBreak.user_id,
+        ActiveBreak.start_time,
+        ActiveBreak.end_time,
+        ActiveBreak.score,
+        ActiveBreak.metrics,
+        User.full_name,
+        User.email,
+        User.department
+    ).join(User, ActiveBreak.user_id == User.id)
+    
+    if day:
+        query = query.filter(cast(ActiveBreak.start_time, Date) == day)
+        
+    query = query.order_by(desc(ActiveBreak.start_time)).limit(100).all()
+    
+    results = []
+    for r in query:
+        # Calcular duración
+        duration = ""
+        if r.start_time and r.end_time:
+            diff = r.end_time - r.start_time
+            seconds = int(diff.total_seconds())
+            if seconds >= 3600:
+                duration = f"{seconds // 3600}h { (seconds % 3600) // 60 }m"
+            elif seconds >= 60:
+                duration = f"{seconds // 60}m {seconds % 60}s"
+            else:
+                duration = f"{seconds}s"
+        else:
+            duration = "0s"
+        
+        results.append({
+            "id": r.id,
+            "user_id": r.user_id,
+            "full_name": r.full_name,
+            "email": r.email,
+            "department": r.department or "General",
+            "start_time": r.start_time.isoformat(),
+            "end_time": r.end_time.isoformat() if r.end_time else None,
+            "duration": duration,
+            "score": r.score,
+            "metrics": r.metrics
+        })
+    return results
+
 @router.get("/departments-risk")
 def get_departments_risk(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     # Agrupar por departamento y calcular riesgo
