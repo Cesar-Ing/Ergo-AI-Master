@@ -664,25 +664,65 @@ export default function DashboardPage() {
                      )}
                   </div>
                ) : !isBreakActive ? (
-                  <div className="bg-white dark:bg-[#0B1B3D]/50 p-10 rounded-[3rem] border border-slate-100 dark:border-white/5 shadow-xl text-center">
-                     <h3 className="text-xl font-black text-[#0B1B3D] dark:text-white mb-8">Entrenamiento IA</h3>
-                     <div className="space-y-6 mb-10 text-left">
-                        <div className="space-y-3">
-                           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Duración (Minutos)</label>
-                           <input 
-                             type="number" 
-                             min="1" 
-                             max="120" 
-                             value={isNaN(breakDuration) ? "" : breakDuration} 
-                             onChange={e => {
-                               const val = parseInt(e.target.value);
-                               setBreakDuration(isNaN(val) ? 1 : Math.max(1, val));
-                             }} 
-                             className="w-full h-16 px-8 rounded-2xl bg-slate-50 dark:bg-white/5 border-2 border-slate-100 dark:border-white/5 font-black text-2xl text-center focus:border-emerald-500 outline-none transition-all shadow-inner" 
-                           />
+                  <div className="space-y-6">
+                     {/* Tarjeta 1: Monitoreo de Postura */}
+                     <div className="bg-white dark:bg-[#0B1B3D]/50 p-8 rounded-[2.5rem] border border-slate-100 dark:border-white/5 shadow-xl text-center">
+                        <span className="text-[8px] font-black text-blue-400 uppercase tracking-[0.2em] block mb-2">MONITOREO ACTIVO</span>
+                        <h3 className="text-xl font-black text-[#0B1B3D] dark:text-white mb-6">Análisis de Postura</h3>
+                        <div className="space-y-4 mb-6 text-left">
+                           <div className="space-y-2">
+                              <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Duración (Minutos)</label>
+                              <input 
+                                type="number" 
+                                min="1" 
+                                max="120" 
+                                value={isNaN(breakDuration) ? "" : breakDuration} 
+                                onChange={e => {
+                                  const val = parseInt(e.target.value);
+                                  setBreakDuration(isNaN(val) ? 1 : Math.max(1, val));
+                                }} 
+                                className="w-full h-12 px-6 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/5 font-black text-lg text-center focus:border-emerald-500 outline-none transition-all shadow-inner" 
+                              />
+                           </div>
                         </div>
+                        <Button onClick={()=>{ setIsBreakActive(true); isBreakActiveRef.current=true; setIsCameraActive(true); setIsCameraLoading(true); setBreakTimeLeft(breakDuration*60); sessionScoresRef.current=[]; setTimeout(startIA, 1000); }} className="w-full h-14 bg-[#0B1B3D] hover:bg-[#1C305C] text-white font-black text-sm rounded-[1.5rem] shadow-xl transition-all hover:scale-[1.02]">ACTIVAR ANÁLISIS</Button>
                      </div>
-                     <Button onClick={()=>{ setIsBreakActive(true); isBreakActiveRef.current=true; setIsCameraActive(true); setIsCameraLoading(true); setBreakTimeLeft(breakDuration*60); sessionScoresRef.current=[]; setTimeout(startIA, 1000); }} className="w-full h-20 bg-[#0B1B3D] hover:bg-[#1C305C] text-white font-black text-lg rounded-[2rem] shadow-2xl transition-all hover:scale-[1.02]">ACTIVAR ANÁLISIS</Button>
+
+                     {/* Tarjeta 2: Ejercicios de Rehabilitación */}
+                     <div className="bg-white dark:bg-[#0B1B3D]/50 p-8 rounded-[2.5rem] border border-slate-100 dark:border-white/5 shadow-xl text-center">
+                        <span className="text-[8px] font-black text-emerald-500 uppercase tracking-[0.2em] block mb-2">REHABILITACIÓN DIRECTA</span>
+                        <h3 className="text-xl font-black text-[#0B1B3D] dark:text-white mb-6">Ejercicios Correctivos</h3>
+                        <div className="space-y-4 mb-6 text-left">
+                           <div className="space-y-2">
+                              <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Seleccionar Ejercicio</label>
+                              <select 
+                                onChange={e => {
+                                  const selectedId = e.target.value;
+                                  setSelectedExercise((EXERCISES as any)[selectedId]);
+                                }}
+                                className="w-full h-12 px-4 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/5 font-bold text-xs text-slate-600 dark:text-white focus:border-emerald-500 outline-none transition-all"
+                              >
+                                <option value="neck_stretch">🧘 Estiramiento Lateral de Cuello</option>
+                                <option value="back_stretch">⚡ Estiramiento de Espalda Alta</option>
+                                <option value="shoulder_shrug">💪 Rotación de Hombros</option>
+                              </select>
+                           </div>
+                        </div>
+                        <Button onClick={() => {
+                          setExerciseMode(true);
+                          if (!selectedExercise) {
+                            setSelectedExercise(EXERCISES.neck_stretch);
+                          }
+                          setExerciseProgress(0);
+                          setExerciseCompleted(false);
+                          exerciseProgressRef.current = 0;
+                          exerciseCompletedRef.current = false;
+                          
+                          setIsCameraActive(true);
+                          setIsCameraLoading(true);
+                          setTimeout(startIA, 1000);
+                        }} className="w-full h-14 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-sm rounded-[1.5rem] shadow-xl transition-all hover:scale-[1.02]">INICIAR EJERCICIO IA</Button>
+                     </div>
                   </div>
                ) : (
                   <div className={`p-12 rounded-[3.5rem] text-white shadow-2xl text-center animate-in zoom-in duration-500 relative overflow-hidden transition-colors duration-500 ${
