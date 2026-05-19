@@ -20,21 +20,24 @@ const EXERCISES = {
     title: 'Estiramiento Lateral de Cuello',
     description: 'Inclina tu cabeza suavemente hacia la izquierda o derecha para liberar tensión cervical.',
     instruction: 'Inclina la cabeza lateralmente hasta sentir el estiramiento.',
-    icon: '🧘'
+    icon: '🧘',
+    recommended_time: '30 segundos'
   },
   back_stretch: {
     id: 'back_stretch',
     title: 'Estiramiento de Espalda Alta',
     description: 'Eleva ambos brazos completamente por encima de tu cabeza para alinear tu columna.',
     instruction: 'Alza ambos brazos bien arriba sobre tu cabeza.',
-    icon: '⚡'
+    icon: '⚡',
+    recommended_time: '20 segundos'
   },
   shoulder_shrug: {
     id: 'shoulder_shrug',
     title: 'Rotación de Hombros',
     description: 'Eleva tus hombros hacia arriba (encogimiento) y mantenlos para liberar la carga del trapecio.',
     instruction: 'Eleva tus hombros hacia tus orejas con fuerza.',
-    icon: '💪'
+    icon: '💪',
+    recommended_time: '15 segundos'
   }
 };
 
@@ -76,6 +79,7 @@ export default function DashboardPage() {
   const [exerciseCompleted, setExerciseCompleted] = useState(false);
   const exerciseProgressRef = useRef(0);
   const exerciseCompletedRef = useRef(false);
+  const [isPostureCorrect, setIsPostureCorrect] = useState(false);
 
   const [profileName, setProfileName] = useState("");
   const [profileEmail, setProfileEmail] = useState("");
@@ -243,6 +247,7 @@ export default function DashboardPage() {
     setExerciseCompleted(false);
     exerciseProgressRef.current = 0;
     exerciseCompletedRef.current = false;
+    setIsPostureCorrect(false);
     setIsCameraActive(false);
     setIsCameraLoading(false);
     if (cameraRef.current) cameraRef.current.stop();
@@ -399,6 +404,7 @@ export default function DashboardPage() {
           }
 
           setSuggestion(guideMsg);
+          setIsPostureCorrect(isCorrect);
 
           if (isCorrect) {
             exerciseProgressRef.current = Math.min(100, exerciseProgressRef.current + 4);
@@ -689,32 +695,39 @@ export default function DashboardPage() {
             <div className="space-y-6">
                {exerciseMode ? (
                   <div className="bg-white dark:bg-[#0B1B3D]/50 p-10 rounded-[3rem] border border-slate-100 dark:border-white/5 shadow-xl text-center relative overflow-hidden">
-                     <div className="absolute top-0 left-0 w-full h-2 bg-slate-100 dark:bg-white/5">
-                       <div className="h-full bg-emerald-500 transition-all duration-300" style={{ width: `${exerciseProgress}%` }}></div>
-                     </div>
+                      <div className="absolute top-0 left-0 w-full h-2 bg-slate-100 dark:bg-white/5">
+                        <div className={`h-full transition-all duration-300 ${isPostureCorrect ? 'bg-emerald-500 shadow-[0_0_10px_#10B981]' : 'bg-amber-500 shadow-[0_0_10px_#F59E0B]'}`} style={{ width: `${exerciseProgress}%` }}></div>
+                      </div>
                      <span className="text-[9px] font-black text-emerald-500 uppercase tracking-[0.2em] block mb-2">Entrenador de Rehabilitación IA</span>
                      <h3 className="text-2xl font-black text-[#0B1B3D] dark:text-white mb-6">{selectedExercise?.title}</h3>
                      
                      {/* Guía Visual */}
-                     <div className="bg-slate-50 dark:bg-white/5 p-6 rounded-2xl border border-slate-100 dark:border-white/10 mb-8 text-left">
-                       <div className="flex gap-4 items-center mb-4">
-                         <span className="text-4xl">{selectedExercise?.icon}</span>
-                         <div>
-                           <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Tu objetivo</p>
-                           <p className="text-xs font-bold text-slate-500 dark:text-blue-200/80">{selectedExercise?.instruction}</p>
-                         </div>
-                       </div>
-                       <p className="text-xs text-slate-400 leading-relaxed italic">{selectedExercise?.description}</p>
-                     </div>
+                      <div className="bg-slate-50 dark:bg-white/5 p-6 rounded-2xl border border-slate-100 dark:border-white/10 mb-8 text-left">
+                        <div className="flex gap-4 items-center mb-4">
+                          <span className="text-4xl">{selectedExercise?.icon}</span>
+                          <div>
+                            <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Tu objetivo</p>
+                            <p className="text-xs font-bold text-slate-500 dark:text-blue-200/80">{selectedExercise?.instruction}</p>
+                          </div>
+                        </div>
+                        <p className="text-xs text-slate-400 leading-relaxed italic mb-4">{selectedExercise?.description}</p>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[9px] bg-emerald-500/20 text-emerald-500 dark:text-emerald-400 font-black px-3 py-1 rounded-full uppercase tracking-wider">⏱️ Tiempo recomendado: {selectedExercise?.recommended_time}</span>
+                        </div>
+                      </div>
 
                      {/* Progreso Circular o Barra Pro */}
-                     <div className="bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 rounded-[2.5rem] p-8 mb-8">
-                       <div className="text-5xl font-mono font-black text-emerald-500 mb-2">{exerciseProgress}%</div>
-                       <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-4">PROGRESO DE ESTIRAMIENTO</p>
-                       <div className="w-full h-4 bg-slate-200 dark:bg-white/10 rounded-full overflow-hidden shadow-inner p-0.5">
-                         <div className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-teal-400 transition-all duration-200" style={{ width: `${exerciseProgress}%` }}></div>
-                       </div>
-                     </div>
+                      <div className="bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 rounded-[2.5rem] p-8 mb-8">
+                        <div className="text-5xl font-mono font-black text-emerald-500 mb-2">{exerciseProgress}%</div>
+                        <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-4">PROGRESO DE ESTIRAMIENTO</p>
+                        <div className="w-full h-4 bg-slate-200 dark:bg-white/10 rounded-full overflow-hidden shadow-inner p-0.5">
+                          <div className={`h-full rounded-full transition-all duration-200 ${
+                            isPostureCorrect 
+                              ? 'bg-gradient-to-r from-emerald-500 to-teal-400 shadow-[0_0_15px_rgba(16,185,129,0.5)] animate-pulse' 
+                              : 'bg-gradient-to-r from-amber-500 to-orange-400 shadow-[0_0_10px_rgba(245,158,11,0.3)]'
+                          }`} style={{ width: `${exerciseProgress}%` }}></div>
+                        </div>
+                      </div>
 
                      {/* Mensaje Dinámico */}
                      <div className="mb-8">
@@ -888,7 +901,10 @@ export default function DashboardPage() {
                  <div className="absolute right-6 top-6 text-5xl opacity-20">{recommendedEx.icon}</div>
                  <span className="text-[8px] font-black text-emerald-500 uppercase tracking-[0.2em] block mb-1">REHABILITACIÓN RECOMENDADA POR IA</span>
                  <h4 className="text-lg font-black text-[#0B1B3D] dark:text-white mb-2">{recommendedEx.title}</h4>
-                 <p className="text-xs text-slate-500 dark:text-blue-200/60 leading-relaxed">{recommendedEx.description}</p>
+                 <p className="text-xs text-slate-500 dark:text-blue-200/60 leading-relaxed mb-4">{recommendedEx.description}</p>
+                 <div className="flex items-center gap-2">
+                   <span className="text-[9px] bg-emerald-500/20 text-emerald-500 dark:text-emerald-400 font-black px-3 py-1 rounded-full uppercase tracking-wider">⏱️ Tiempo recomendado: {recommendedEx.recommended_time}</span>
+                 </div>
                </div>
 
                <div className="flex flex-col sm:flex-row gap-4">
