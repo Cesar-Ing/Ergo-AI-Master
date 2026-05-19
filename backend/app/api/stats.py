@@ -84,6 +84,7 @@ def get_activity_details(day: str = None, db: Session = Depends(get_db), current
         ActiveBreak.user_id,
         ActiveBreak.start_time,
         ActiveBreak.end_time,
+        ActiveBreak.duration_seconds,
         ActiveBreak.score,
         ActiveBreak.metrics,
         User.full_name,
@@ -98,19 +99,21 @@ def get_activity_details(day: str = None, db: Session = Depends(get_db), current
     
     results = []
     for r in query:
-        # Calcular duración
-        duration = ""
-        if r.start_time and r.end_time:
+        # Calcular duración a partir del campo duration_seconds de la DB
+        seconds = r.duration_seconds or 0
+        
+        # En caso de que sea cero pero existan start y end, calcular la diferencia
+        if seconds <= 0 and r.start_time and r.end_time:
             diff = r.end_time - r.start_time
             seconds = int(diff.total_seconds())
-            if seconds >= 3600:
-                duration = f"{seconds // 3600}h { (seconds % 3600) // 60 }m"
-            elif seconds >= 60:
-                duration = f"{seconds // 60}m {seconds % 60}s"
-            else:
-                duration = f"{seconds}s"
+            
+        duration = ""
+        if seconds >= 3600:
+            duration = f"{seconds // 3600}h { (seconds % 3600) // 60 }m"
+        elif seconds >= 60:
+            duration = f"{seconds // 60}m {seconds % 60}s"
         else:
-            duration = "0s"
+            duration = f"{seconds}s"
         
         results.append({
             "id": r.id,
