@@ -32,20 +32,40 @@ export default function AdminPage() {
   }, []);
 
   const refreshUsers = async () => {
+    // 1. Fetch Users con soporte de barra diagonal final
     try {
-      const [userData, activityData, configData, detailsData] = await Promise.all([
-        apiFetch('/users'),
-        apiFetch('/stats/global-activity'),
-        apiFetch('/config'),
-        apiFetch('/stats/activity-details')
-      ]);
-      
-      if (userData?.users) setUsers(userData.users);
-      if (activityData) setGlobalActivity(activityData);
-      if (configData) setConfigs(configData);
-      if (detailsData) setDetailedActivity(detailsData);
+      const userData = await apiFetch('/users/');
+      if (userData?.users) {
+        setUsers(userData.users);
+      } else if (Array.isArray(userData)) {
+        setUsers(userData);
+      }
     } catch (e) { 
-      console.error("Admin Load Error:", e); 
+      console.error("Error cargando usuarios:", e); 
+    }
+
+    // 2. Fetch Actividad Global
+    try {
+      const activityData = await apiFetch('/stats/global-activity');
+      if (activityData) setGlobalActivity(activityData);
+    } catch (e) {
+      console.error("Error cargando actividad global:", e);
+    }
+
+    // 3. Fetch Configuración de Umbrales
+    try {
+      const configData = await apiFetch('/config');
+      if (configData) setConfigs(configData);
+    } catch (e) {
+      console.error("Error cargando configs de red:", e);
+    }
+
+    // 4. Fetch Detalles de Actividades Recientes
+    try {
+      const detailsData = await apiFetch('/stats/activity-details');
+      if (detailsData) setDetailedActivity(detailsData);
+    } catch (e) {
+      console.error("Error cargando logs detallados:", e);
     }
   };
 
