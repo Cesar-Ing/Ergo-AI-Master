@@ -51,6 +51,39 @@ const formatTime = (seconds: number) => {
   return `${h}:${m}:${s}`;
 };
 
+const PEDIATRIC_GUIDELINES_FALLBACK = [
+  {
+    id: 1,
+    key: "neck_flexion",
+    title: "Prevención de Síndrome de Cuello de Texto Pediátrico",
+    clinical_backing: "La Asociación Española de Pediatría (AEP) advierte que la flexión cervical constante por encima de 15° en niños en edad escolar multiplica por 3 el peso efectivo que soporta la columna vertebral en pleno desarrollo óseo, acelerando contracturas, rigidez cervical y predisposición a cefaleas tensionales infantiles.",
+    source: "Asociación Española de Pediatría (AEP)",
+    exercise_suggestion: "Estiramiento Lateral de Cuello",
+    exercise_duration: 30,
+    reference_link: "https://www.aeped.es"
+  },
+  {
+    id: 2,
+    key: "shoulder_tilt",
+    title: "Desbalance Escapular Infantil",
+    clinical_backing: "De acuerdo con guías de ergonomía de la OMS, la asimetría de hombros mayor al 10% durante el uso continuo de portátiles y tabletas escolares induce fatiga precoz del músculo trapecio superior. A mediano plazo, esto altera la simetría muscular e incrementa el riesgo de escoliosis funcional en niños en crecimiento.",
+    source: "Organización Mundial de la Salud (OMS)",
+    exercise_suggestion: "Rotación de Hombros",
+    exercise_duration: 15,
+    reference_link: "https://www.who.int"
+  },
+  {
+    id: 3,
+    key: "slouching",
+    title: "Pre-cifosis e Hipotonía Postural Escolar",
+    clinical_backing: "Estudios de fisioterapia pediátrica demuestran que la postura encorvada constante reduce la capacidad pulmonar y ventilatoria hasta en un 15% debido a la compresión diafragmática. Asimismo, acelera la rigidez de la columna torácica durante las fases críticas del 'estirón' del crecimiento escolar.",
+    source: "Clinical Pediatrics (PubMed)",
+    exercise_suggestion: "Estiramiento de Espalda Alta",
+    exercise_duration: 20,
+    reference_link: "https://pubmed.ncbi.nlm.nih.gov"
+  }
+];
+
 export default function DashboardPage() {
   const [mounted, setMounted] = useState(false);
   const [activeTab, setActiveTab] = useState<'calendar' | 'camera' | 'pediatric_db' | 'profile'>('calendar');
@@ -59,7 +92,7 @@ export default function DashboardPage() {
   const [breaks, setBreaks] = useState<any[]>([]);
   const [prescriptions, setPrescriptions] = useState<any[]>([]);
   const [selectedPrescription, setSelectedPrescription] = useState<any>(null);
-  const [pediatricGuidelines, setPediatricGuidelines] = useState<any[]>([]);
+  const [pediatricGuidelines, setPediatricGuidelines] = useState<any[]>(PEDIATRIC_GUIDELINES_FALLBACK);
   const [activePediatricGuideline, setActivePediatricGuideline] = useState<any>(null);
   
   const poseRef = useRef<any>(null);
@@ -362,7 +395,8 @@ export default function DashboardPage() {
         // Mostrar feedback siempre que la cámara esté activa
         setPostureScore(evaluation.score);
         setBiometricState(evaluation.state);
-        setSuggestion(evaluation.suggestion);
+
+        let dynamicSuggestion = evaluation.suggestion;
 
         // Map dynamic active guideline based on metrics
         if (evaluation.state !== 'optimal') {
@@ -378,12 +412,17 @@ export default function DashboardPage() {
           if (matchedKey) {
             const found = pediatricGuidelinesRef.current.find(g => g.key === matchedKey);
             setActivePediatricGuideline(found || null);
+            if (found) {
+              dynamicSuggestion = `${evaluation.suggestion} (${found.source}: ${found.title})`;
+            }
           } else {
             setActivePediatricGuideline(null);
           }
         } else {
           setActivePediatricGuideline(null);
         }
+
+        setSuggestion(dynamicSuggestion);
 
         if (isBreakActiveRef.current) {
            sessionScoresRef.current.push(evaluation.score);
@@ -1073,12 +1112,37 @@ export default function DashboardPage() {
 
       {showResultModal && lastSessionData && (() => {
         const getRecommendedExercise = (score: number) => {
+          const neckG = pediatricGuidelines.find(g => g.key === 'neck_flexion');
+          const backG = pediatricGuidelines.find(g => g.key === 'slouching');
+          const shoulderG = pediatricGuidelines.find(g => g.key === 'shoulder_tilt');
+
+          const dyEx = {
+            neck_stretch: {
+              ...EXERCISES.neck_stretch,
+              title: neckG?.exercise_suggestion || EXERCISES.neck_stretch.title,
+              recommended_time: neckG ? `${neckG.exercise_duration} segundos` : EXERCISES.neck_stretch.recommended_time,
+              duration_seconds: neckG?.exercise_duration || EXERCISES.neck_stretch.duration_seconds
+            },
+            back_stretch: {
+              ...EXERCISES.back_stretch,
+              title: backG?.exercise_suggestion || EXERCISES.back_stretch.title,
+              recommended_time: backG ? `${backG.exercise_duration} segundos` : EXERCISES.back_stretch.recommended_time,
+              duration_seconds: backG?.exercise_duration || EXERCISES.back_stretch.duration_seconds
+            },
+            shoulder_shrug: {
+              ...EXERCISES.shoulder_shrug,
+              title: shoulderG?.exercise_suggestion || EXERCISES.shoulder_shrug.title,
+              recommended_time: shoulderG ? `${shoulderG.exercise_duration} segundos` : EXERCISES.shoulder_shrug.recommended_time,
+              duration_seconds: shoulderG?.exercise_duration || EXERCISES.shoulder_shrug.duration_seconds
+            }
+          };
+
           if (score < 75) {
-            return EXERCISES.back_stretch;
+            return dyEx.back_stretch;
           } else if (score < 90) {
-            return EXERCISES.neck_stretch;
+            return dyEx.neck_stretch;
           } else {
-            return EXERCISES.shoulder_shrug;
+            return dyEx.shoulder_shrug;
           }
         };
         const recommendedEx = getRecommendedExercise(lastSessionData.score);
