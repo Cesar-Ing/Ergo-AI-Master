@@ -36,31 +36,31 @@ try:
         db.commit()
         print(f"👤 Usuario de respaldo creado: {admin_email} / admin123")
     
-    # Sebrar Directrices Pediátricas
+    # Sembrar Directrices Clínicas Generales
     guidelines = [
         PediatricGuideline(
             key="neck_flexion",
-            title="Prevención de Síndrome de Cuello de Texto Pediátrico",
-            clinical_backing="La Asociación Española de Pediatría (AEP) advierte que la flexión cervical constante por encima de 15° en niños en edad escolar multiplica por 3 el peso efectivo que soporta la columna vertebral en pleno desarrollo óseo, acelerando contracturas, rigidez cervical y predisposición a cefaleas tensionales infantiles.",
-            source="Asociación Española de Pediatría (AEP)",
+            title="Prevención del Síndrome de Cuello de Texto (Text Neck)",
+            clinical_backing="La flexión cervical prolongada e inclinada por encima de 15° multiplica por 3 el peso efectivo que soporta la columna vertebral. Afecta a personas de todas las edades, induciendo contracturas crónicas, rigidez cervical y predisposición a cefaleas tensionales.",
+            source="Asociación Ergonómica Internacional (IEA) / Mayo Clinic",
             exercise_suggestion="Estiramiento Lateral de Cuello",
             exercise_duration=30,
-            reference_link="https://www.aeped.es"
+            reference_link="https://www.mayoclinic.org"
         ),
         PediatricGuideline(
             key="shoulder_tilt",
-            title="Desbalance Escapular Infantil",
-            clinical_backing="De acuerdo con guías de ergonomía de la OMS, la asimetría de hombros mayor al 10% durante el uso continuo de portátiles y tabletas escolares induce fatiga precoz del músculo trapecio superior. A mediano plazo, esto altera la simetría muscular e incrementa el riesgo de escoliosis funcional en niños en crecimiento.",
-            source="Organización Mundial de la Salud (OMS)",
+            title="Desbalance Escapular y Tensión de Trapecio",
+            clinical_backing="La asimetría y tensión en los hombros durante el uso prolongado de computadoras e instrumentos de trabajo altera el trapecio superior. Induce desbalances musculares, dolores de espalda alta y desalineación postural crónica en adultos y jóvenes.",
+            source="Organización Mundial de la Salud (OMS) / OSHA",
             exercise_suggestion="Rotación de Hombros",
             exercise_duration=15,
-            reference_link="https://www.who.int"
+            reference_link="https://www.osha.gov"
         ),
         PediatricGuideline(
             key="slouching",
-            title="Pre-cifosis e Hipotonía Postural Escolar",
-            clinical_backing="Estudios de fisioterapia pediátrica demuestran que la postura encorvada constante reduce la capacidad pulmonar y ventilatoria hasta en un 15% debido a la compresión diafragmática. Asimismo, acelera la rigidez de la columna torácica durante las fases críticas del 'estirón' del crecimiento escolar.",
-            source="Clinical Pediatrics (PubMed)",
+            title="Cifosis Postural e Ineficiencia Respiratoria",
+            clinical_backing="La postura encorvada prolongada (slouching) comprime la caja torácica, reduciendo la capacidad de ventilación pulmonar hasta en un 15% debido a la compresión diafragmática. Fomenta rigidez torácica y debilidad muscular en la columna en cualquier rango de edad.",
+            source="Journal of Physical Therapy Science / PubMed",
             exercise_suggestion="Estiramiento de Espalda Alta",
             exercise_duration=20,
             reference_link="https://pubmed.ncbi.nlm.nih.gov"
@@ -71,8 +71,16 @@ try:
         existing = db.query(PediatricGuideline).filter(PediatricGuideline.key == g.key).first()
         if not existing:
             db.add(g)
+        else:
+            # Actualizar datos si ya existe
+            existing.title = g.title
+            existing.clinical_backing = g.clinical_backing
+            existing.source = g.source
+            existing.exercise_suggestion = g.exercise_suggestion
+            existing.exercise_duration = g.exercise_duration
+            existing.reference_link = g.reference_link
     db.commit()
-    print("🌱 Base de datos pediátrica sembrada exitosamente.")
+    print("🌱 Base de datos de directrices clínicas sembrada exitosamente.")
     
 except Exception as e:
     print(f"❌ Error al crear admin o sembrar directrices: {e}")

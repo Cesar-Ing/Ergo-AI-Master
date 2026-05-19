@@ -51,33 +51,33 @@ const formatTime = (seconds: number) => {
   return `${h}:${m}:${s}`;
 };
 
-const PEDIATRIC_GUIDELINES_FALLBACK = [
+const CLINICAL_GUIDELINES_FALLBACK = [
   {
     id: 1,
     key: "neck_flexion",
-    title: "Prevención de Síndrome de Cuello de Texto Pediátrico",
-    clinical_backing: "La Asociación Española de Pediatría (AEP) advierte que la flexión cervical constante por encima de 15° en niños en edad escolar multiplica por 3 el peso efectivo que soporta la columna vertebral en pleno desarrollo óseo, acelerando contracturas, rigidez cervical y predisposición a cefaleas tensionales infantiles.",
-    source: "Asociación Española de Pediatría (AEP)",
+    title: "Prevención del Síndrome de Cuello de Texto (Text Neck)",
+    clinical_backing: "La flexión cervical prolongada e inclinada por encima de 15° multiplica por 3 el peso efectivo que soporta la columna vertebral. Afecta a personas de todas las edades, induciendo contracturas crónicas, rigidez cervical y predisposición a cefaleas tensionales.",
+    source: "Asociación Ergonómica Internacional (IEA) / Mayo Clinic",
     exercise_suggestion: "Estiramiento Lateral de Cuello",
     exercise_duration: 30,
-    reference_link: "https://www.aeped.es"
+    reference_link: "https://www.mayoclinic.org"
   },
   {
     id: 2,
     key: "shoulder_tilt",
-    title: "Desbalance Escapular Infantil",
-    clinical_backing: "De acuerdo con guías de ergonomía de la OMS, la asimetría de hombros mayor al 10% durante el uso continuo de portátiles y tabletas escolares induce fatiga precoz del músculo trapecio superior. A mediano plazo, esto altera la simetría muscular e incrementa el riesgo de escoliosis funcional en niños en crecimiento.",
-    source: "Organización Mundial de la Salud (OMS)",
+    title: "Desbalance Escapular y Tensión de Trapecio",
+    clinical_backing: "La asimetría y tensión en los hombros durante el uso prolongado de computadoras e instrumentos de trabajo altera el trapecio superior. Induce desbalances musculares, dolores de espalda alta y desalineación postural crónica en adultos y jóvenes.",
+    source: "Organización Mundial de la Salud (OMS) / OSHA",
     exercise_suggestion: "Rotación de Hombros",
     exercise_duration: 15,
-    reference_link: "https://www.who.int"
+    reference_link: "https://www.osha.gov"
   },
   {
     id: 3,
     key: "slouching",
-    title: "Pre-cifosis e Hipotonía Postural Escolar",
-    clinical_backing: "Estudios de fisioterapia pediátrica demuestran que la postura encorvada constante reduce la capacidad pulmonar y ventilatoria hasta en un 15% debido a la compresión diafragmática. Asimismo, acelera la rigidez de la columna torácica durante las fases críticas del 'estirón' del crecimiento escolar.",
-    source: "Clinical Pediatrics (PubMed)",
+    title: "Cifosis Postural e Ineficiencia Respiratoria",
+    clinical_backing: "La postura encorvada prolongada (slouching) comprime la caja torácica, reduciendo la capacidad de ventilación pulmonar hasta en un 15% debido a la compresión diafragmática. Fomenta rigidez torácica y debilidad muscular en la columna en cualquier rango de edad.",
+    source: "Journal of Physical Therapy Science / PubMed",
     exercise_suggestion: "Estiramiento de Espalda Alta",
     exercise_duration: 20,
     reference_link: "https://pubmed.ncbi.nlm.nih.gov"
@@ -92,7 +92,7 @@ export default function DashboardPage() {
   const [breaks, setBreaks] = useState<any[]>([]);
   const [prescriptions, setPrescriptions] = useState<any[]>([]);
   const [selectedPrescription, setSelectedPrescription] = useState<any>(null);
-  const [pediatricGuidelines, setPediatricGuidelines] = useState<any[]>(PEDIATRIC_GUIDELINES_FALLBACK);
+  const [pediatricGuidelines, setPediatricGuidelines] = useState<any[]>(CLINICAL_GUIDELINES_FALLBACK);
   const [activePediatricGuideline, setActivePediatricGuideline] = useState<any>(null);
   
   const poseRef = useRef<any>(null);
@@ -830,7 +830,7 @@ export default function DashboardPage() {
                           return matchedG ? (
                             <div className="mt-4 p-4 bg-emerald-500/5 dark:bg-emerald-950/20 border border-emerald-500/20 rounded-2xl text-left">
                               <p className="text-[8px] font-black text-emerald-500 uppercase tracking-widest mb-1 flex items-center gap-1">
-                                <span>🔬</span> Sustento Clínico Pediátrico
+                                <span>🔬</span> Sustento Clínico y Ergonómico
                               </p>
                               <p className="text-[10px] text-slate-500 dark:text-blue-200/70 leading-relaxed font-bold">
                                 {matchedG.clinical_backing}
@@ -975,7 +975,7 @@ export default function DashboardPage() {
                            <div className="bg-white/10 backdrop-blur-sm p-6 rounded-3xl border border-white/10 text-left text-xs animate-in fade-in slide-in-from-top-2 duration-300 mb-10">
                              <div className="flex items-center gap-2 mb-2">
                                <span className="text-base">🔬</span>
-                               <span className="font-black uppercase tracking-wider text-emerald-300">Sustento Clínico Pediátrico</span>
+                               <span className="font-black uppercase tracking-wider text-emerald-300">Sustento Clínico y Ergonómico</span>
                              </div>
                              <p className="font-medium text-white/95 leading-relaxed mb-3">
                                {activePediatricGuideline.clinical_backing}
@@ -1008,10 +1008,10 @@ export default function DashboardPage() {
                 Base de Datos Científica
               </span>
               <h2 className="text-3xl font-black text-[#0B1B3D] dark:text-white tracking-tighter">
-                Sustento Ergonómico Pediátrico
+                Sustento Ergonómico y Postural
               </h2>
               <p className="text-sm text-slate-400 dark:text-blue-200/40 font-bold leading-relaxed">
-                Nuestras alertas e indicaciones de descanso activo están fundamentadas en estudios de pediatría y guías ergonómicas de la Organización Mundial de la Salud (OMS) y la Asociación Española de Pediatría (AEP).
+                Nuestras alertas e indicaciones de descanso activo están fundamentadas en estudios de ergonomía de la Organización Mundial de la Salud (OMS), la OSHA y directrices clínicas internacionales aplicables a todas las edades.
               </p>
             </div>
 
@@ -1158,7 +1158,7 @@ export default function DashboardPage() {
                <h2 className="text-3xl font-black text-[#0B1B3D] dark:text-white mb-4 tracking-tight">¡Sesión Exitosa!</h2>
                <p className="text-sm font-bold text-slate-500 dark:text-blue-200/60 leading-relaxed mb-6 max-w-sm mx-auto">{lastSessionData.suggestion}</p>
                
-               {/* Sustento Clínico Pediátrico */}
+               {/* Sustento Clínico y Ergonómico */}
                 {(() => {
                   const matchingG = pediatricGuidelines.find(g => {
                     if (lastSessionData.score < 75) return g.key === 'slouching';
@@ -1168,7 +1168,7 @@ export default function DashboardPage() {
                   return matchingG ? (
                     <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-3xl p-5 mb-6 text-left text-xs">
                       <p className="font-black text-emerald-500 uppercase tracking-widest text-[9px] mb-2 flex items-center gap-1.5">
-                        <span>🔬</span> Sustento Clínico Pediátrico ({matchingG.source})
+                        <span>🔬</span> Sustento Clínico y Ergonómico ({matchingG.source})
                       </p>
                       <p className="text-slate-500 dark:text-blue-200/80 leading-relaxed font-bold">
                         {matchingG.clinical_backing}
