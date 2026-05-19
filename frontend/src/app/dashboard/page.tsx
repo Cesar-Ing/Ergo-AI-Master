@@ -53,12 +53,14 @@ const formatTime = (seconds: number) => {
 
 export default function DashboardPage() {
   const [mounted, setMounted] = useState(false);
-  const [activeTab, setActiveTab] = useState<'calendar' | 'camera' | 'profile'>('calendar');
+  const [activeTab, setActiveTab] = useState<'calendar' | 'camera' | 'pediatric_db' | 'profile'>('calendar');
   
   const [session, setSession] = useState<any>(null);
   const [breaks, setBreaks] = useState<any[]>([]);
   const [prescriptions, setPrescriptions] = useState<any[]>([]);
   const [selectedPrescription, setSelectedPrescription] = useState<any>(null);
+  const [pediatricGuidelines, setPediatricGuidelines] = useState<any[]>([]);
+  const [activePediatricGuideline, setActivePediatricGuideline] = useState<any>(null);
   
   const poseRef = useRef<any>(null);
   const cameraRef = useRef<any>(null);
@@ -106,6 +108,8 @@ export default function DashboardPage() {
   const thresholdsRef = useRef({ neck: 25, back: 15, sensitivity: 0.8 });
 
   useEffect(() => { thresholdsRef.current = thresholds; }, [thresholds]);
+  const pediatricGuidelinesRef = useRef<any[]>([]);
+  useEffect(() => { pediatricGuidelinesRef.current = pediatricGuidelines; }, [pediatricGuidelines]);
 
   const parseUTC = (dateStr: string) => {
     if (!dateStr) return new Date(NaN);
@@ -187,10 +191,11 @@ export default function DashboardPage() {
         setProfileEmail(sData.email || "");
         setProfileDept(sData.department || "");
 
-        const [bRes, pRes, cRes] = await Promise.all([
+        const [bRes, pRes, cRes, gRes] = await Promise.all([
           fetch(`/api/breaks?userId=${sData.id}&t=${Date.now()}`, { cache: 'no-store' }),
           fetch(`/api/prescriptions/user/${sData.id}`, { cache: 'no-store' }),
-          fetch('/api/config', { cache: 'no-store' })
+          fetch('/api/config', { cache: 'no-store' }),
+          fetch('/api/pediatric-guidelines', { cache: 'no-store' })
         ]);
         if (bRes.ok) {
           const bData = await bRes.json();
@@ -207,6 +212,10 @@ export default function DashboardPage() {
             back: parseInt(cData.back_threshold || '15'),
             sensitivity: parseFloat(cData.sensitivity || '0.8')
           });
+        }
+        if (gRes.ok) {
+          const gData = await gRes.json();
+          setPediatricGuidelines(gData);
         }
       } catch (e) { console.error(e); }
     };
@@ -354,6 +363,27 @@ export default function DashboardPage() {
         setPostureScore(evaluation.score);
         setBiometricState(evaluation.state);
         setSuggestion(evaluation.suggestion);
+
+        // Map dynamic active guideline based on metrics
+        if (evaluation.state !== 'optimal') {
+          let matchedKey = null;
+          if (evaluation.metrics.headHeight > 0 && evaluation.metrics.headHeight < 0.45) {
+            matchedKey = "slouching";
+          } else if (evaluation.metrics.neckOffset > 0.15) {
+            matchedKey = "neck_flexion";
+          } else if (evaluation.metrics.shoulderTilt > 0.1) {
+            matchedKey = "shoulder_tilt";
+          }
+          
+          if (matchedKey) {
+            const found = pediatricGuidelinesRef.current.find(g => g.key === matchedKey);
+            setActivePediatricGuideline(found || null);
+          } else {
+            setActivePediatricGuideline(null);
+          }
+        } else {
+          setActivePediatricGuideline(null);
+        }
 
         if (isBreakActiveRef.current) {
            sessionScoresRef.current.push(evaluation.score);
@@ -547,9 +577,9 @@ export default function DashboardPage() {
       </div>
 
       <div className="flex p-1.5 bg-slate-200/40 dark:bg-white/5 rounded-2xl w-fit mx-auto backdrop-blur-sm">
-        {['calendar', 'camera', 'profile'].map(t => (
-          <button key={t} onClick={() => setActiveTab(t as any)} className={`px-10 py-3 rounded-xl text-xs font-black uppercase transition-all ${activeTab === t ? "bg-[#0B1B3D] dark:bg-emerald-500 text-white shadow-xl" : "text-slate-500 dark:text-blue-200/30 hover:text-white"}`}>
-             {t === 'calendar' ? 'Actividad' : t === 'camera' ? 'Cámara IA' : 'Configurar'}
+        {['calendar', 'camera', 'pediatric_db', 'profile'].map(t => (
+          <button key={t} onClick={() => setActiveTab(t as any)} className={`px-6 py-3 rounded-xl text-xs font-black uppercase transition-all ${activeTab === t ? "bg-[#0B1B3D] dark:bg-emerald-500 text-white shadow-xl" : "text-slate-500 dark:text-blue-200/30 hover:text-white"}`}>
+             {t === 'calendar' ? 'Actividad' : t === 'camera' ? 'Cámara IA' : t === 'pediatric_db' ? 'Base Clínica' : 'Configurar'}
           </button>
         ))}
       </div>
@@ -747,6 +777,27 @@ export default function DashboardPage() {
                           </div>
                         </div>
                         <p className="text-xs text-slate-400 leading-relaxed italic mb-4">{selectedExercise?.description}</p>
+                        {(() => {
+                          const matchedG = pediatricGuidelines.find(g => {
+                            if (selectedExercise?.id === 'neck_stretch') return g.key === 'neck_flexion';
+                            if (selectedExercise?.id === 'back_stretch') return g.key === 'slouching';
+                            if (selectedExercise?.id === 'shoulder_shrug') return g.key === 'shoulder_tilt';
+                            return false;
+                          });
+                          return matchedG ? (
+                            <div className="mt-4 p-4 bg-emerald-500/5 dark:bg-emerald-950/20 border border-emerald-500/20 rounded-2xl text-left">
+                              <p className="text-[8px] font-black text-emerald-500 uppercase tracking-widest mb-1 flex items-center gap-1">
+                                <span>🔬</span> Sustento Clínico Pediátrico
+                              </p>
+                              <p className="text-[10px] text-slate-500 dark:text-blue-200/70 leading-relaxed font-bold">
+                                {matchedG.clinical_backing}
+                              </p>
+                              <p className="text-[8px] text-slate-400 dark:text-slate-500 font-bold mt-2 text-right">
+                                Fuente: {matchedG.source}
+                              </p>
+                            </div>
+                          ) : null;
+                        })()}
                         <div className="mt-4 p-5 bg-[#0B1B3D] border border-emerald-500/20 rounded-2xl text-center shadow-md relative overflow-hidden">
                           <div className="absolute right-3 top-3 text-[7px] font-black text-emerald-400 animate-pulse">REC • IA TIMER</div>
                           <p className="text-[7px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">RELOJ / CRONÓMETRO DE REHABILITACIÓN</p>
@@ -877,6 +928,25 @@ export default function DashboardPage() {
                         <div className="bg-white/20 backdrop-blur-md p-8 rounded-3xl mb-10 border border-white/20 shadow-inner">
                            <p className="text-white text-xl font-black leading-relaxed">{suggestion}</p>
                         </div>
+                        {activePediatricGuideline && (
+                           <div className="bg-white/10 backdrop-blur-sm p-6 rounded-3xl border border-white/10 text-left text-xs animate-in fade-in slide-in-from-top-2 duration-300 mb-10">
+                             <div className="flex items-center gap-2 mb-2">
+                               <span className="text-base">🔬</span>
+                               <span className="font-black uppercase tracking-wider text-emerald-300">Sustento Clínico Pediátrico</span>
+                             </div>
+                             <p className="font-medium text-white/95 leading-relaxed mb-3">
+                               {activePediatricGuideline.clinical_backing}
+                             </p>
+                             <div className="flex items-center justify-between text-[10px] text-white/60 font-bold border-t border-white/5 pt-2 mt-2">
+                               <span>Fuente: {activePediatricGuideline.source}</span>
+                               {activePediatricGuideline.reference_link && (
+                                 <a href={activePediatricGuideline.reference_link} target="_blank" rel="noopener noreferrer" className="underline hover:text-white transition-colors">
+                                   Ver Referencia
+                                 </a>
+                               )}
+                             </div>
+                           </div>
+                        )}
                         <Button onClick={finishBreak} className="w-full h-16 bg-white text-[#0B1B3D] font-black rounded-2xl hover:bg-slate-100 transition-all shadow-xl text-lg">FINALIZAR Y GUARDAR</Button>
                      </div>
                      <div className="absolute -bottom-10 -right-10 text-[12rem] opacity-10 font-black tracking-tighter">
@@ -884,6 +954,81 @@ export default function DashboardPage() {
                      </div>
                   </div>
                )}
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'pediatric_db' && (
+          <div className="space-y-8 animate-in fade-in duration-500">
+            <div className="text-center max-w-2xl mx-auto space-y-4">
+              <span className="px-4 py-1.5 rounded-full bg-emerald-500/10 text-emerald-500 text-[10px] font-black uppercase tracking-[0.2em] border border-emerald-500/20 inline-block">
+                Base de Datos Científica
+              </span>
+              <h2 className="text-3xl font-black text-[#0B1B3D] dark:text-white tracking-tighter">
+                Sustento Ergonómico Pediátrico
+              </h2>
+              <p className="text-sm text-slate-400 dark:text-blue-200/40 font-bold leading-relaxed">
+                Nuestras alertas e indicaciones de descanso activo están fundamentadas en estudios de pediatría y guías ergonómicas de la Organización Mundial de la Salud (OMS) y la Asociación Española de Pediatría (AEP).
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {pediatricGuidelines.length > 0 ? (
+                pediatricGuidelines.map(g => (
+                  <div key={g.id} className="bg-white dark:bg-[#0B1B3D]/50 border border-slate-100 dark:border-white/5 rounded-[2.5rem] p-8 shadow-xl flex flex-col justify-between hover:scale-[1.02] transition-all duration-300 relative overflow-hidden group">
+                    {/* Glass effect gradient badge */}
+                    <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/5 rounded-full blur-2xl group-hover:bg-emerald-500/10 transition-all"></div>
+                    
+                    <div className="space-y-6">
+                      <div className="flex items-center justify-between">
+                        <span className="px-4 py-1.5 rounded-full bg-slate-100 dark:bg-white/5 text-[9px] font-black text-slate-400 dark:text-blue-200/50 uppercase tracking-widest">
+                          {g.key === 'neck_flexion' ? 'Cuello Cervical' : g.key === 'shoulder_tilt' ? 'Hombros y Escápula' : 'Columna Torácica'}
+                        </span>
+                        <span className="text-lg">🔬</span>
+                      </div>
+
+                      <div className="space-y-2">
+                        <h3 className="text-xl font-black text-[#0B1B3D] dark:text-white tracking-tight leading-tight">
+                          {g.title}
+                        </h3>
+                        <p className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest">
+                          Avalado por: {g.source}
+                        </p>
+                      </div>
+
+                      <div className="bg-slate-50 dark:bg-white/5 p-5 rounded-2xl border border-slate-100 dark:border-white/5 text-xs text-slate-500 dark:text-blue-200/70 leading-relaxed font-semibold">
+                        {g.clinical_backing}
+                      </div>
+                    </div>
+
+                    <div className="mt-8 border-t border-slate-100 dark:border-white/5 pt-6 space-y-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center text-lg">🧘</div>
+                        <div>
+                          <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Ejercicio Correctivo</p>
+                          <p className="text-xs font-black text-[#0B1B3D] dark:text-white">{g.exercise_suggestion}</p>
+                        </div>
+                      </div>
+
+                      {g.reference_link && (
+                        <a 
+                          href={g.reference_link} 
+                          target="_blank" 
+                          rel="noopener noreferrer" 
+                          className="flex items-center justify-center gap-2 w-full h-12 bg-[#0B1B3D] hover:bg-[#1C305C] text-white font-black text-xs rounded-xl shadow-lg transition-all"
+                        >
+                          📄 CONSULTAR ESTUDIO MÉDICO
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="col-span-3 text-center py-12">
+                  <div className="w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                  <p className="text-xs font-mono text-emerald-400 uppercase tracking-widest">Conectando con base de datos en la nube...</p>
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -945,6 +1090,25 @@ export default function DashboardPage() {
                <h2 className="text-3xl font-black text-[#0B1B3D] dark:text-white mb-4 tracking-tight">¡Sesión Exitosa!</h2>
                <p className="text-sm font-bold text-slate-500 dark:text-blue-200/60 leading-relaxed mb-6 max-w-sm mx-auto">{lastSessionData.suggestion}</p>
                
+               {/* Sustento Clínico Pediátrico */}
+                {(() => {
+                  const matchingG = pediatricGuidelines.find(g => {
+                    if (lastSessionData.score < 75) return g.key === 'slouching';
+                    if (lastSessionData.score < 90) return g.key === 'neck_flexion';
+                    return g.key === 'shoulder_tilt';
+                  });
+                  return matchingG ? (
+                    <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-3xl p-5 mb-6 text-left text-xs">
+                      <p className="font-black text-emerald-500 uppercase tracking-widest text-[9px] mb-2 flex items-center gap-1.5">
+                        <span>🔬</span> Sustento Clínico Pediátrico ({matchingG.source})
+                      </p>
+                      <p className="text-slate-500 dark:text-blue-200/80 leading-relaxed font-bold">
+                        {matchingG.clinical_backing}
+                      </p>
+                    </div>
+                  ) : null;
+                })()}
+
                {/* Tarjeta de Rehabilitación Recomendada */}
                <div className="bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 rounded-[2.5rem] p-6 mb-8 text-left relative overflow-hidden">
                  <div className="absolute right-6 top-6 text-5xl opacity-20">{recommendedEx.icon}</div>

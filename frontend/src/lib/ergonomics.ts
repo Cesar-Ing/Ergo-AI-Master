@@ -32,6 +32,10 @@ export function evaluatePosture(keypoints: Keypoint[], thresholds?: any): Postur
   let state: 'optimal' | 'warning' | 'critical' = 'optimal';
   let suggestion = "Postura Ergonómica Perfecta ✅";
 
+  let neckOffsetVal = 0;
+  let shoulderTiltVal = 0;
+  let headHeightVal = 0;
+
   if (nose && leftS && rightS) {
     // 1. CALIBRACIÓN RELATIVA: Usamos el ancho de los hombros como unidad de medida base
     const shoulderWidth = Math.abs(leftS.x - rightS.x);
@@ -41,12 +45,15 @@ export function evaluatePosture(keypoints: Keypoint[], thresholds?: any): Postur
     // 2. DESVIACIÓN HORIZONTAL DEL CUELLO (Relativa al ancho de hombros)
     // Si la nariz se aleja más del 25% del ancho de los hombros del centro, hay mala postura.
     const neckOffset = Math.abs(nose.x - midX) / shoulderWidth;
+    neckOffsetVal = neckOffset;
     
     // 3. INCLINACIÓN DE HOMBROS (Relativa al ancho de hombros)
     const shoulderTilt = Math.abs(leftS.y - rightS.y) / shoulderWidth;
+    shoulderTiltVal = shoulderTilt;
 
     // 4. FACTOR DE ENCORVAMIENTO (Altura de la cabeza relativa a los hombros)
     const headHeight = Math.abs(nose.y - midY) / shoulderWidth;
+    headHeightVal = headHeight;
 
     // --- LÓGICA DE DECISIÓN COHERENTE ---
 
@@ -94,9 +101,9 @@ export function evaluatePosture(keypoints: Keypoint[], thresholds?: any): Postur
     state,
     suggestion,
     metrics: {
-      neckOffset: 0, 
-      shoulderTilt: 0,
-      headHeight: 0
+      neckOffset: neckOffsetVal, 
+      shoulderTilt: shoulderTiltVal,
+      headHeight: headHeightVal
     }
   };
 }
