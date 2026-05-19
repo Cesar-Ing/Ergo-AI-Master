@@ -107,8 +107,27 @@ export default function DashboardPage() {
     const loadData = async () => {
       try {
         const sRes = await fetch('/api/users/me', { cache: 'no-store' });
-        if (!sRes.ok) return;
-        const sData = await sRes.json();
+        let sData = null;
+        if (sRes.ok) {
+          sData = await sRes.json();
+        }
+        
+        if (!sData || !sData.id) {
+          const localEmail = localStorage.getItem('ergoai_user_email');
+          const localRole = localStorage.getItem('ergoai_user_role');
+          const localId = localStorage.getItem('ergoai_user_id');
+          if (localEmail) {
+            sData = {
+              id: localId ? (parseInt(localId, 10) || localId) : 'manual_user',
+              email: localEmail,
+              role: localRole || 'user',
+              name: localEmail.split('@')[0]
+            };
+          }
+        }
+        
+        if (!sData) return;
+        
         if (sData.full_name) sData.name = sData.full_name;
         setSession(sData);
         sessionRef.current = sData;
