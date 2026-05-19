@@ -6,6 +6,8 @@ from app.models.user import User
 from app.schemas.user import UserResponse, UserUpdate
 from app.core.security import get_password_hash
 from app.api.auth import get_current_user
+from app.models.active_break import ActiveBreak
+from app.models.prescription import Prescription
 
 router = APIRouter(prefix="/users", tags=["Users"])
 
@@ -86,6 +88,15 @@ def delete_user(user_id: int, db: Session = Depends(get_db), current_user: User 
     if user.id == current_user.id:
         raise HTTPException(status_code=400, detail="No puedes eliminar tu propia cuenta")
         
+    # 1. Eliminar ActiveBreaks asociados a este usuario
+    db.query(ActiveBreak).filter(ActiveBreak.user_id == user_id).delete(synchronize_session=False)
+    
+    # 2. Eliminar Prescriptions asociadas a este usuario (como paciente o como especialista)
+    db.query(Prescription).filter(
+        (Prescription.user_id == user_id) | (Prescription.specialist_id == user_id)
+    ).delete(synchronize_session=False)
+    
+    # 3. Eliminar el usuario
     db.delete(user)
     db.commit()
-    return {"success": True, "message": "Usuario eliminado correctamente"}
+    return {"success": True, "message": "Usuario y sus registros asociados eliminados correctamente"}
