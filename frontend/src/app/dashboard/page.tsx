@@ -84,6 +84,7 @@ export default function DashboardPage() {
   const exerciseCompletedRef = useRef(false);
   const [isPostureCorrect, setIsPostureCorrect] = useState(false);
   const [exerciseTimeLeft, setExerciseTimeLeft] = useState(0);
+  const timerInitializedRef = useRef(false);
 
   const [profileName, setProfileName] = useState("");
   const [profileEmail, setProfileEmail] = useState("");
@@ -252,6 +253,7 @@ export default function DashboardPage() {
     exerciseProgressRef.current = 0;
     exerciseCompletedRef.current = false;
     setIsPostureCorrect(false);
+    timerInitializedRef.current = false;
     setIsCameraActive(false);
     setIsCameraLoading(false);
     if (cameraRef.current) cameraRef.current.stop();
@@ -501,7 +503,7 @@ export default function DashboardPage() {
     let timer: any;
     if (exerciseMode && exerciseTimeLeft > 0) {
       timer = setInterval(() => setExerciseTimeLeft(p => p - 1), 1000);
-    } else if (exerciseMode && exerciseTimeLeft === 0) {
+    } else if (exerciseMode && exerciseTimeLeft === 0 && timerInitializedRef.current) {
       exerciseCompletedRef.current = true;
       setExerciseCompleted(true);
     }
@@ -832,6 +834,7 @@ export default function DashboardPage() {
                            setExerciseCompleted(false);
                            exerciseProgressRef.current = 0;
                            exerciseCompletedRef.current = false;
+                           timerInitializedRef.current = true;
                            
                            setIsCameraActive(true);
                            setIsCameraLoading(true);
@@ -943,6 +946,7 @@ export default function DashboardPage() {
                     exerciseProgressRef.current = 0;
                     exerciseCompletedRef.current = false;
                     setExerciseTimeLeft(recommendedEx.duration_seconds || 30);
+                    timerInitializedRef.current = true;
                     
                     // Encender la cámara e iniciar
                     setIsCameraActive(true);
