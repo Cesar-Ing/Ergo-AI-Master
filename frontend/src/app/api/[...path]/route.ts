@@ -12,7 +12,7 @@ async function handleRequest(request: Request, context: { params: Promise<{ path
   let path = pathSegments.join('/');
   
   // Evitar redirecciones 307/308 en el backend de FastAPI que convierten POST/PUT a GET
-  if (path === 'breaks' || path === 'config') {
+  if (path === 'breaks' || path === 'config' || path === 'pediatric-guidelines') {
     path = `${path}/`;
   }
   
