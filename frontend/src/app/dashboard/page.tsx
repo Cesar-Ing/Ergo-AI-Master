@@ -248,6 +248,51 @@ export default function DashboardPage() {
     if (cameraRef.current) cameraRef.current.stop();
   };
 
+  const saveAndExitExercise = async () => {
+    const isCompleted = exerciseCompletedRef.current;
+    const finalScore = Math.round(exerciseProgressRef.current);
+    
+    if (!session?.id) {
+       alert("Error: Sesión no identificada.");
+       exitExerciseMode();
+       return;
+    }
+
+    try {
+      const res = await fetch('/api/breaks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          user_id: session.id, 
+          duration_seconds: 60,
+          score: finalScore, 
+          metrics: { 
+            type: "exercise",
+            exercise_id: selectedExerciseRef.current?.id || "unknown",
+            exercise_title: selectedExerciseRef.current?.title || "Estiramiento",
+            completed: isCompleted
+          } 
+        })
+      });
+      
+      if (res.ok) {
+        // Refrescar historial
+        const bRes = await fetch(`/api/breaks?userId=${session.id}&t=${Date.now()}`, { cache: 'no-store' });
+        if (bRes.ok) {
+          const bData = await bRes.json();
+          const sorted = bData.sort((a:any, b:any) => parseUTC(b.start_time).getTime() - parseUTC(a.start_time).getTime());
+          setBreaks(sorted);
+          window.dispatchEvent(new CustomEvent('streakUpdated', { detail: sorted }));
+        }
+        alert(isCompleted ? "🏆 ¡Excelente trabajo! Ejercicio guardado en tu historial." : "⚠️ Ejercicio finalizado y guardado en tu historial.");
+      }
+    } catch (e) {
+      console.error(e);
+    }
+    
+    exitExerciseMode();
+  };
+
   const startIA = () => {
     if (!(window as any).Pose || !videoRef.current) return;
     const pose = new (window as any).Pose({
@@ -442,6 +487,9 @@ export default function DashboardPage() {
     return () => clearInterval(timer);
   }, [isBreakActive, breakTimeLeft]);
 
+  const postureBreaks = breaks.filter(b => b.metrics?.type !== 'exercise');
+  const exerciseBreaks = breaks.filter(b => b.metrics?.type === 'exercise');
+
   if (!mounted) return null;
 
   return (
@@ -474,24 +522,28 @@ export default function DashboardPage() {
         {activeTab === 'calendar' && (
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
             <div className="lg:col-span-3 space-y-8">
-              <div className="grid grid-cols-3 gap-6">
-                <div className="bg-white dark:bg-[#0B1B3D]/50 p-8 rounded-[2rem] border border-slate-100 dark:border-white/5 shadow-sm text-center">
-                  <p className="text-slate-400 dark:text-blue-200/40 text-[10px] font-black uppercase tracking-widest mb-4">Salud General</p>
-                  <p className="text-5xl font-black text-[#0B1B3D] dark:text-white">{breaks.length > 0 ? Math.round(breaks.reduce((a,b)=>a+b.score,0)/breaks.length) : 0}%</p>
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <div className="bg-white dark:bg-[#0B1B3D]/50 p-6 rounded-[2rem] border border-slate-100 dark:border-white/5 shadow-sm text-center">
+                  <p className="text-slate-400 dark:text-blue-200/40 text-[9px] font-black uppercase tracking-widest mb-2">Salud General</p>
+                  <p className="text-4xl font-black text-[#0B1B3D] dark:text-white">{postureBreaks.length > 0 ? Math.round(postureBreaks.reduce((a,b)=>a+b.score,0)/postureBreaks.length) : 0}%</p>
                 </div>
-                <div className="bg-white dark:bg-[#0B1B3D]/50 p-8 rounded-[2rem] border border-slate-100 dark:border-white/5 shadow-sm text-center">
-                  <p className="text-slate-400 dark:text-blue-200/40 text-[10px] font-black uppercase tracking-widest mb-4">Sesiones</p>
-                  <p className="text-5xl font-black text-[#0B1B3D] dark:text-white">{breaks.length}</p>
+                <div className="bg-white dark:bg-[#0B1B3D]/50 p-6 rounded-[2rem] border border-slate-100 dark:border-white/5 shadow-sm text-center">
+                  <p className="text-slate-400 dark:text-blue-200/40 text-[9px] font-black uppercase tracking-widest mb-2">Análisis de Postura</p>
+                  <p className="text-4xl font-black text-[#0B1B3D] dark:text-white">{postureBreaks.length}</p>
                 </div>
-                <div className="bg-gradient-to-br from-[#0B1B3D] to-[#1C305C] p-8 rounded-[2rem] text-white shadow-2xl relative overflow-hidden group border border-white/10">
-                   <p className="text-blue-300 text-[10px] font-black uppercase tracking-widest mb-4">Alertas Médicas</p>
+                <div className="bg-white dark:bg-[#0B1B3D]/50 p-6 rounded-[2rem] border border-slate-100 dark:border-white/5 shadow-sm text-center">
+                  <p className="text-emerald-500 text-[9px] font-black uppercase tracking-widest mb-2">Ejercicios Realizados</p>
+                  <p className="text-4xl font-black text-emerald-500">{exerciseBreaks.length}</p>
+                </div>
+                <div className="bg-gradient-to-br from-[#0B1B3D] to-[#1C305C] p-6 rounded-[2rem] text-white shadow-2xl relative overflow-hidden group border border-white/10">
+                   <p className="text-blue-300 text-[9px] font-black uppercase tracking-widest mb-2">Alertas Médicas</p>
                    {prescriptions.length > 0 ? (
                       <div onClick={() => setSelectedPrescription(prescriptions[0])} className="cursor-pointer">
-                        <p className="text-sm font-black leading-tight mb-2 line-clamp-1">{prescriptions[0].title}</p>
-                        <p className="text-[10px] text-blue-200/60 font-bold line-clamp-2">{prescriptions[0].content}</p>
+                        <p className="text-xs font-black leading-tight mb-1 line-clamp-1">{prescriptions[0].title}</p>
+                        <p className="text-[9px] text-blue-200/60 font-bold line-clamp-2">{prescriptions[0].content}</p>
                       </div>
-                   ) : <p className="text-sm font-bold text-blue-200/40 italic">Todo bajo control.</p>}
-                   <div className="absolute -right-4 -bottom-4 text-6xl opacity-5">🩺</div>
+                   ) : <p className="text-xs font-bold text-blue-200/40 italic">Todo bajo control.</p>}
+                   <div className="absolute -right-4 -bottom-4 text-5xl opacity-5">🩺</div>
                 </div>
               </div>
 
@@ -540,16 +592,40 @@ export default function DashboardPage() {
                    <div className="space-y-6">
                       <div className="bg-slate-50 dark:bg-black/20 p-8 rounded-3xl border border-slate-100 dark:border-white/5 text-center shadow-inner">
                          <p className="text-6xl font-black text-emerald-500">{selectedBreak.score}%</p>
-                         <p className="text-[10px] font-black text-slate-400 uppercase mt-3 tracking-widest">Calidad de Postura</p>
+                         <p className="text-[10px] font-black text-slate-400 uppercase mt-3 tracking-widest">
+                           {selectedBreak.metrics?.type === 'exercise' ? 'Efectividad del Ejercicio' : 'Calidad de Postura'}
+                         </p>
                       </div>
-                      <div className="space-y-4">
-                         {getRecommendations(selectedBreak.score).map((r,i)=>(
-                           <div key={i} className="flex items-center gap-4 p-4 bg-white dark:bg-white/5 rounded-2xl border border-slate-100 dark:border-white/5 shadow-sm">
-                             <span className="text-2xl">{r.icon}</span>
-                             <p className="text-[11px] font-bold text-slate-600 dark:text-blue-100/80 leading-snug">{r.text}</p>
+                      
+                      {selectedBreak.metrics?.type === 'exercise' ? (
+                        <div className="space-y-4">
+                           <div className="flex items-center gap-4 p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl shadow-sm">
+                             <span className="text-2xl">🧘</span>
+                             <div>
+                               <p className="text-[9px] font-black text-emerald-500 uppercase tracking-wider">EJERCICIO REALIZADO</p>
+                               <p className="text-xs font-black text-[#0B1B3D] dark:text-white">{selectedBreak.metrics.exercise_title || 'Estiramiento'}</p>
+                             </div>
                            </div>
-                         ))}
-                      </div>
+                           <div className="flex items-center gap-4 p-4 bg-white dark:bg-white/5 rounded-2xl border border-slate-100 dark:border-white/5 shadow-sm">
+                             <span className="text-2xl">{selectedBreak.score >= 80 ? '🏆' : '⚠️'}</span>
+                             <div>
+                               <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider">RESULTADO BIOMÉTRICO</p>
+                               <p className="text-xs font-bold text-slate-600 dark:text-blue-100/80">
+                                 {selectedBreak.score >= 80 ? '¡Se realizó de manera excelente y completa!' : 'Se inició pero no se completó en su totalidad.'}
+                               </p>
+                             </div>
+                           </div>
+                        </div>
+                      ) : (
+                        <div className="space-y-4">
+                           {getRecommendations(selectedBreak.score).map((r,i)=>(
+                             <div key={i} className="flex items-center gap-4 p-4 bg-white dark:bg-white/5 rounded-2xl border border-slate-100 dark:border-white/5 shadow-sm">
+                               <span className="text-2xl">{r.icon}</span>
+                               <p className="text-[11px] font-bold text-slate-600 dark:text-blue-100/80 leading-snug">{r.text}</p>
+                             </div>
+                           ))}
+                        </div>
+                      )}
                    </div>
                  ) : (
                    <div className="flex-1 flex flex-col items-center justify-center text-center opacity-30">
@@ -653,13 +729,13 @@ export default function DashboardPage() {
                        )}
                      </div>
 
-                     {exerciseCompleted ? (
-                       <Button onClick={exitExerciseMode} className="w-full h-18 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-lg rounded-[2rem] shadow-2xl hover:scale-105 transition-all">
+ {exerciseCompleted ? (
+                       <Button onClick={saveAndExitExercise} className="w-full h-18 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-lg rounded-[2rem] shadow-2xl hover:scale-105 transition-all">
                          FINALIZAR EJERCICIO ⚡
                        </Button>
                      ) : (
-                       <Button onClick={exitExerciseMode} className="w-full h-16 bg-slate-100 hover:bg-slate-200 dark:bg-white/5 dark:hover:bg-white/10 text-slate-700 dark:text-white font-bold rounded-[1.8rem] transition-all">
-                         SALIR
+                       <Button onClick={saveAndExitExercise} className="w-full h-16 bg-slate-100 hover:bg-slate-200 dark:bg-white/5 dark:hover:bg-white/10 text-slate-700 dark:text-white font-bold rounded-[1.8rem] transition-all">
+                         SALIR Y GUARDAR
                        </Button>
                      )}
                   </div>
