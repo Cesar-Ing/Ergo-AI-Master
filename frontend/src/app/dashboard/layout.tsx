@@ -87,10 +87,18 @@ export default function DashboardLayout({
           
           const calculateStreak = (bData: any[]) => {
             if (!Array.isArray(bData) || bData.length === 0) return 0;
+            const parseUTC = (dateStr: string) => {
+              if (!dateStr) return new Date(NaN);
+              let normalized = dateStr.replace(' ', 'T');
+              if (!normalized.includes('Z') && !normalized.includes('+') && !/-\d{2}:\d{2}$/.test(normalized)) {
+                normalized += 'Z';
+              }
+              return new Date(normalized);
+            };
             const getLocalYMD = (d: Date) => {
               return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
             };
-            const days = Array.from(new Set(bData.map((b: any) => getLocalYMD(new Date(b.start_time))))).sort().reverse() as string[];
+            const days = Array.from(new Set(bData.map((b: any) => getLocalYMD(parseUTC(b.start_time))))).sort().reverse() as string[];
             const todayDate = new Date();
             const yesterdayDate = new Date(Date.now() - 86400000);
             const todayStr = getLocalYMD(todayDate);
@@ -136,10 +144,18 @@ export default function DashboardLayout({
            // Si recibe el array de breaks, calcula la racha
            const calculateStreak = (bData: any[]) => {
               if (!bData || bData.length === 0) return 0;
-              const getLocalYMD = (d: Date) => {
+              const parseUTC = (dateStr: string) => {
+                 if (!dateStr) return new Date(NaN);
+                 let normalized = dateStr.replace(' ', 'T');
+                 if (!normalized.includes('Z') && !normalized.includes('+') && !/-\d{2}:\d{2}$/.test(normalized)) {
+                   normalized += 'Z';
+                 }
+                 return new Date(normalized);
+               };
+               const getLocalYMD = (d: Date) => {
                 return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
               };
-              const days = Array.from(new Set(bData.map((b: any) => getLocalYMD(new Date(b.start_time))))).sort().reverse() as string[];
+              const days = Array.from(new Set(bData.map((b: any) => getLocalYMD(parseUTC(b.start_time))))).sort().reverse() as string[];
               const todayDate = new Date();
               const yesterdayDate = new Date(Date.now() - 86400000);
               const todayStr = getLocalYMD(todayDate);

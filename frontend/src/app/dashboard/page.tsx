@@ -55,12 +55,21 @@ export default function DashboardPage() {
 
   useEffect(() => { thresholdsRef.current = thresholds; }, [thresholds]);
 
+  const parseUTC = (dateStr: string) => {
+    if (!dateStr) return new Date(NaN);
+    let normalized = dateStr.replace(' ', 'T');
+    if (!normalized.includes('Z') && !normalized.includes('+') && !/-\d{2}:\d{2}$/.test(normalized)) {
+      normalized += 'Z';
+    }
+    return new Date(normalized);
+  };
+
   const streak = useMemo(() => {
     if (breaks.length === 0) return 0;
     const getLocalYMD = (d: Date) => {
       return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
     };
-    const days = Array.from(new Set(breaks.map(b => getLocalYMD(new Date(b.start_time))))).sort().reverse();
+    const days = Array.from(new Set(breaks.map(b => getLocalYMD(parseUTC(b.start_time))))).sort().reverse();
     const todayDate = new Date();
     const yesterdayDate = new Date(Date.now() - 86400000);
     const todayStr = getLocalYMD(todayDate);
@@ -109,12 +118,12 @@ export default function DashboardPage() {
 
         const [bRes, pRes, cRes] = await Promise.all([
           fetch(`/api/breaks?userId=${sData.id}&t=${Date.now()}`, { cache: 'no-store' }),
-          fetch(`/api/stats/prescriptions/user/${sData.id}`),
-          fetch('/api/stats/config')
+          fetch(`/api/prescriptions/user/${sData.id}`, { cache: 'no-store' }),
+          fetch('/api/config', { cache: 'no-store' })
         ]);
         if (bRes.ok) {
           const bData = await bRes.json();
-          setBreaks(bData.sort((a:any, b:any) => new Date(b.start_time).getTime() - new Date(a.start_time).getTime()));
+          setBreaks(bData.sort((a:any, b:any) => parseUTC(b.start_time).getTime() - parseUTC(a.start_time).getTime()));
         }
         if (pRes.ok) {
            const pData = await pRes.json();
@@ -239,7 +248,7 @@ export default function DashboardPage() {
         const bRes = await fetch(`/api/breaks?userId=${session.id}&t=${Date.now()}`, { cache: 'no-store' });
         if (bRes.ok) {
           const bData = await bRes.json();
-          const sorted = bData.sort((a:any, b:any) => new Date(b.start_time).getTime() - new Date(a.start_time).getTime());
+          const sorted = bData.sort((a:any, b:any) => parseUTC(b.start_time).getTime() - parseUTC(a.start_time).getTime());
           setBreaks(sorted);
           window.dispatchEvent(new CustomEvent('streakUpdated', { detail: sorted }));
         }
@@ -339,7 +348,7 @@ export default function DashboardPage() {
                        };
                        const dateStr = getLocalYMD(date);
                        const hasBreak = breaks.some(b => {
-                           const breakDateStr = getLocalYMD(new Date(b.start_time));
+                           const breakDateStr = getLocalYMD(parseUTC(b.start_time));
                            return breakDateStr === dateStr;
                        });
                        return (
@@ -356,7 +365,7 @@ export default function DashboardPage() {
                    <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
                       {breaks.slice(0, 5).map((b, i) => (
                         <div key={i} onClick={() => setSelectedBreak(b)} className={`p-5 rounded-[2rem] border transition-all cursor-pointer text-center ${selectedBreak?.id === b.id ? 'bg-emerald-500/10 border-emerald-500' : 'bg-slate-50 dark:bg-white/5 border-slate-100 dark:border-white/5 hover:border-slate-300'}`}>
-                           <p className="text-[10px] font-black text-slate-400 uppercase mb-2">{new Date(b.start_time).toLocaleDateString([], {day:'2-digit', month:'short'})}</p>
+                           <p className="text-[10px] font-black text-slate-400 uppercase mb-2">{parseUTC(b.start_time).toLocaleDateString([], {day:'2-digit', month:'short'})}</p>
                            <p className="text-2xl font-black text-emerald-500">{b.score}%</p>
                            <p className="text-[8px] font-black text-slate-300 uppercase mt-1">{Math.round(b.duration_seconds/60)} min</p>
                         </div>
