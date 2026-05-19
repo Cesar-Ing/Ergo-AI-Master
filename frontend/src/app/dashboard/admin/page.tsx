@@ -522,36 +522,83 @@ export default function AdminPage() {
       )}
 
       {activeTab === "users" && (
-        <div className="bg-white dark:bg-[#0B1B3D]/50 rounded-[4rem] border border-slate-100 dark:border-white/5 shadow-xl overflow-hidden animate-in slide-in-from-bottom-10 duration-500">
-           <table className="w-full text-left">
-              <thead>
-                 <tr className="bg-slate-50 dark:bg-black/20 border-b border-slate-100 dark:border-white/5">
-                    <th className="px-12 py-10 text-[10px] font-black text-slate-400 dark:text-blue-200/40 uppercase tracking-[0.3em]">Colaborador / Organización</th>
-                    <th className="px-12 py-10 text-[10px] font-black text-slate-400 dark:text-blue-200/40 uppercase tracking-[0.3em]">Nivel de Acceso</th>
-                    <th className="px-12 py-10 text-[10px] font-black text-slate-400 dark:text-blue-200/40 uppercase tracking-[0.3em] text-right">Acciones</th>
-                 </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-50 dark:divide-white/5">
-                 {users.map(u => (
-                    <tr key={u.id} className="hover:bg-slate-50 dark:hover:bg-white/5 transition-all duration-300">
-                       <td className="px-12 py-10">
-                          <p className="font-black text-[#0B1B3D] dark:text-white text-2xl tracking-tighter">{u.full_name}</p>
-                          <p className="text-xs text-slate-400 dark:text-blue-200/40 font-bold uppercase mt-1">{u.email}</p>
-                          <p className="text-[10px] text-slate-300 dark:text-blue-200/20 font-black uppercase mt-1 tracking-widest">{u.department || 'General'}</p>
-                       </td>
-                       <td className="px-12 py-10">
-                          <span className={`px-6 py-2.5 rounded-2xl text-[10px] font-black tracking-widest uppercase shadow-sm ${u.role === 'admin' ? 'bg-indigo-600 text-white' : u.role === 'specialist' ? 'bg-emerald-500 text-white' : 'bg-slate-100 dark:bg-white/10 text-slate-400'}`}>
-                             {u.role}
-                          </span>
-                       </td>
-                       <td className="px-12 py-10 text-right space-x-4">
-                          <button onClick={() => handleEdit(u)} className="text-[10px] font-black text-indigo-600 uppercase tracking-widest hover:underline">Editar</button>
-                          <button onClick={() => handleDelete(u.id)} className="text-[10px] font-black text-red-500 uppercase tracking-widest hover:underline">Eliminar</button>
-                       </td>
+        <div className="space-y-6 animate-in slide-in-from-bottom-10 duration-500">
+           {/* Cabecera y Herramientas del Tab de Cuentas */}
+           <div className="bg-white dark:bg-[#0B1B3D]/50 p-10 rounded-[3.5rem] border border-slate-100 dark:border-white/5 shadow-xl flex flex-col md:flex-row justify-between items-center gap-6">
+              <div>
+                 <h3 className="text-2xl font-black text-[#0B1B3D] dark:text-white tracking-tight">Gestión de Cuentas</h3>
+                 <p className="text-xs text-slate-400 dark:text-blue-200/40 font-bold mt-1 uppercase tracking-widest">
+                    Registra, edita o elimina credenciales y niveles de acceso a la red ErgoIA.
+                 </p>
+              </div>
+              <button 
+                onClick={() => { setEditingUser(null); setFormData({full_name:'', email:'', password:'', role:'user', department:'General'}); setIsModalOpen(true); }}
+                className="px-8 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-black uppercase tracking-widest rounded-2xl shadow-xl shadow-indigo-600/10 hover:scale-105 transition-all"
+              >
+                 + NUEVO USUARIO
+              </button>
+           </div>
+
+           {/* Tabla de Cuentas */}
+           <div className="bg-white dark:bg-[#0B1B3D]/50 rounded-[4rem] border border-slate-100 dark:border-white/5 shadow-xl overflow-hidden">
+              <table className="w-full text-left">
+                 <thead>
+                    <tr className="bg-slate-50 dark:bg-black/20 border-b border-slate-100 dark:border-white/5">
+                       <th className="px-12 py-8 text-[10px] font-black text-slate-400 dark:text-blue-200/40 uppercase tracking-[0.3em]">Colaborador / Organización</th>
+                       <th className="px-12 py-8 text-[10px] font-black text-slate-400 dark:text-blue-200/40 uppercase tracking-[0.3em]">Nivel de Acceso</th>
+                       <th className="px-12 py-8 text-[10px] font-black text-slate-400 dark:text-blue-200/40 uppercase tracking-[0.3em] text-right">Acciones</th>
                     </tr>
-                 ))}
-              </tbody>
-           </table>
+                 </thead>
+                 <tbody className="divide-y divide-slate-50 dark:divide-white/5">
+                    {users.map(u => {
+                       let roleBadgeClass = "";
+                       let roleLabel = "";
+                       if (u.role === 'admin') {
+                          roleBadgeClass = "bg-rose-500/10 border border-rose-500/20 text-rose-500 shadow-rose-500/5";
+                          roleLabel = "🔴 Administrador";
+                       } else if (u.role === 'specialist') {
+                          roleBadgeClass = "bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 shadow-emerald-500/5";
+                          roleLabel = "🟢 Especialista";
+                       } else {
+                          roleBadgeClass = "bg-blue-500/10 border border-blue-500/20 text-blue-500 shadow-blue-500/5";
+                          roleLabel = "🔵 Colaborador";
+                       }
+
+                       return (
+                          <tr key={u.id} className="hover:bg-slate-50 dark:hover:bg-white/5 transition-all duration-300">
+                             <td className="px-12 py-8">
+                                <p className="font-black text-[#0B1B3D] dark:text-white text-xl tracking-tight">{u.full_name}</p>
+                                <div className="flex items-center gap-3 mt-1">
+                                   <p className="text-[10px] text-slate-400 dark:text-blue-200/30 font-bold uppercase">{u.email}</p>
+                                   <span className="text-slate-300 dark:text-white/10 text-xs">•</span>
+                                   <p className="text-[10px] text-indigo-500 dark:text-indigo-400/80 font-black uppercase tracking-widest">💼 {u.department || 'General'}</p>
+                                </div>
+                             </td>
+                             <td className="px-12 py-8">
+                                <span className={`inline-block px-5 py-2 rounded-xl text-[10px] font-black tracking-widest uppercase shadow-sm ${roleBadgeClass}`}>
+                                   {roleLabel}
+                                </span>
+                             </td>
+                             <td className="px-12 py-8 text-right space-x-6">
+                                <button 
+                                  onClick={() => handleEdit(u)} 
+                                  className="text-[10px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-widest hover:underline transition-all"
+                                >
+                                   ✍️ Editar
+                                </button>
+                                <button 
+                                  onClick={() => handleDelete(u.id)} 
+                                  className="text-[10px] font-black text-red-500 dark:text-red-400 uppercase tracking-widest hover:underline transition-all"
+                                >
+                                   🗑️ Eliminar
+                                </button>
+                             </td>
+                          </tr>
+                       );
+                    })}
+                 </tbody>
+              </table>
+           </div>
         </div>
       )}
 
