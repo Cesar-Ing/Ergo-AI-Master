@@ -22,6 +22,10 @@ export default function AdminPage() {
   const [selectedDayFilter, setSelectedDayFilter] = useState<string | null>(null);
   const [loadingDetails, setLoadingDetails] = useState(false);
 
+  const [searchQuery, setSearchQuery] = useState("");
+  const [typeFilter, setTypeFilter] = useState("all");
+  const [riskFilter, setRiskFilter] = useState("all");
+
   useEffect(() => {
     setMounted(true);
     refreshUsers();
@@ -58,6 +62,28 @@ export default function AdminPage() {
       setLoadingDetails(false);
     }
   };
+
+  const filteredActivities = detailedActivity.filter(act => {
+    // 1. Filtro de búsqueda por colaborador (nombre o correo)
+    const matchesSearch = searchQuery === "" || 
+      act.full_name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+      act.email.toLowerCase().includes(searchQuery.toLowerCase());
+      
+    // 2. Filtro de tipo de actividad
+    const isExercise = act.metrics?.type === 'exercise';
+    const matchesType = typeFilter === 'all' || 
+      (typeFilter === 'exercise' && isExercise) || 
+      (typeFilter === 'monitoring' && !isExercise);
+      
+    // 3. Filtro por nivel de riesgo / score
+    const score = act.score || 0;
+    const matchesRisk = riskFilter === 'all' || 
+      (riskFilter === 'optimal' && score >= 75) || 
+      (riskFilter === 'warning' && score >= 50 && score < 75) || 
+      (riskFilter === 'critical' && score < 50);
+      
+    return matchesSearch && matchesType && matchesRisk;
+  });
 
   const saveConfig = async (key: string, value: string) => {
     setIsSaving(true);
@@ -301,7 +327,7 @@ export default function AdminPage() {
                 )}
              </div>
 
-             {loadingDetails ? (
+              {loadingDetails ? (
                 <div className="py-20 flex flex-col items-center justify-center gap-4">
                    <div className="w-10 h-10 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Consultando logs de red...</p>
@@ -313,21 +339,71 @@ export default function AdminPage() {
                    <p className="text-xs text-slate-400 dark:text-slate-500 font-bold mt-1">Ningún colaborador ha realizado entrenamientos o monitoreos con este filtro.</p>
                 </div>
              ) : (
-                <div className="overflow-x-auto">
-                   <table className="w-full text-left border-collapse">
-                      <thead>
-                         <tr className="bg-slate-100/50 dark:bg-black/25 border-b border-slate-100 dark:border-white/5">
-                            <th className="px-10 py-6 text-[10px] font-black text-slate-400 dark:text-blue-200/40 uppercase tracking-[0.25em]">Colaborador</th>
-                            <th className="px-10 py-6 text-[10px] font-black text-slate-400 dark:text-blue-200/40 uppercase tracking-[0.25em]">Organización / Depto</th>
-                            <th className="px-10 py-6 text-[10px] font-black text-slate-400 dark:text-blue-200/40 uppercase tracking-[0.25em]">Sesión / Actividad</th>
-                            <th className="px-10 py-6 text-[10px] font-black text-slate-400 dark:text-blue-200/40 uppercase tracking-[0.25em]">Duración</th>
-                            <th className="px-10 py-6 text-[10px] font-black text-slate-400 dark:text-blue-200/40 uppercase tracking-[0.25em] text-center">Score Promedio</th>
-                            <th className="px-10 py-6 text-[10px] font-black text-slate-400 dark:text-blue-200/40 uppercase tracking-[0.25em] text-right">Registro de Hora</th>
-                         </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-50 dark:divide-white/5">
-                         {detailedActivity.map((act) => {
-                            const isExercise = act.metrics?.type === 'exercise';
+                <>
+                   {/* Barra de Filtros Interactiva */}
+                   <div className="p-8 bg-slate-50/50 dark:bg-black/10 border-b border-slate-100 dark:border-white/5 flex flex-col md:flex-row gap-6 items-center">
+                      {/* Buscador de Colaborador */}
+                      <div className="w-full md:flex-1 relative">
+                         <span className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400">🔍</span>
+                         <input 
+                           type="text" 
+                           value={searchQuery}
+                           onChange={e => setSearchQuery(e.target.value)}
+                           placeholder="Buscar por colaborador o correo..."
+                           className="w-full bg-white dark:bg-[#08132B] border border-slate-200 dark:border-white/10 rounded-2xl pl-12 pr-6 py-3.5 text-xs font-bold focus:ring-2 ring-indigo-500 outline-none transition-all"
+                         />
+                      </div>
+                      
+                      {/* Selector de Tipo */}
+                      <div className="w-full md:w-60">
+                         <select 
+                           value={typeFilter}
+                           onChange={e => setTypeFilter(e.target.value)}
+                           className="w-full bg-white dark:bg-[#08132B] border border-slate-200 dark:border-white/10 rounded-2xl px-6 py-3.5 text-xs font-bold outline-none"
+                         >
+                            <option value="all">🔍 Todas las Actividades</option>
+                            <option value="monitoring">🔬 Análisis de Postura</option>
+                            <option value="exercise">🏋️ Ejercicios Correctivos</option>
+                         </select>
+                      </div>
+
+                      {/* Selector de Riesgo */}
+                      <div className="w-full md:w-60">
+                         <select 
+                           value={riskFilter}
+                           onChange={e => setRiskFilter(e.target.value)}
+                           className="w-full bg-white dark:bg-[#08132B] border border-slate-200 dark:border-white/10 rounded-2xl px-6 py-3.5 text-xs font-bold outline-none"
+                         >
+                            <option value="all">⚠️ Todos los Riesgos</option>
+                            <option value="optimal">🟢 Óptimo (&gt;= 75%)</option>
+                            <option value="warning">🟡 Advertencia (50% - 74%)</option>
+                            <option value="critical">🔴 Crítico (&lt; 50%)</option>
+                         </select>
+                      </div>
+                   </div>
+
+                   {filteredActivities.length === 0 ? (
+                      <div className="py-20 text-center">
+                         <p className="text-4xl mb-4">🔍</p>
+                         <p className="text-lg font-black text-slate-500 dark:text-blue-200/40 uppercase tracking-widest">Sin resultados</p>
+                         <p className="text-xs text-slate-400 dark:text-slate-500 font-bold mt-1">Intenta ajustando los criterios de búsqueda o de filtros.</p>
+                      </div>
+                   ) : (
+                      <div className="overflow-x-auto">
+                         <table className="w-full text-left border-collapse">
+                            <thead>
+                               <tr className="bg-slate-100/50 dark:bg-black/25 border-b border-slate-100 dark:border-white/5">
+                                  <th className="px-10 py-6 text-[10px] font-black text-slate-400 dark:text-blue-200/40 uppercase tracking-[0.25em]">Colaborador</th>
+                                  <th className="px-10 py-6 text-[10px] font-black text-slate-400 dark:text-blue-200/40 uppercase tracking-[0.25em]">Organización / Depto</th>
+                                  <th className="px-10 py-6 text-[10px] font-black text-slate-400 dark:text-blue-200/40 uppercase tracking-[0.25em]">Sesión / Actividad</th>
+                                  <th className="px-10 py-6 text-[10px] font-black text-slate-400 dark:text-blue-200/40 uppercase tracking-[0.25em]">Duración</th>
+                                  <th className="px-10 py-6 text-[10px] font-black text-slate-400 dark:text-blue-200/40 uppercase tracking-[0.25em] text-center">Score Promedio</th>
+                                  <th className="px-10 py-6 text-[10px] font-black text-slate-400 dark:text-blue-200/40 uppercase tracking-[0.25em] text-right">Registro de Hora</th>
+                               </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-50 dark:divide-white/5">
+                               {filteredActivities.map((act) => {
+                                  const isExercise = act.metrics?.type === 'exercise';
                             const score = act.score;
                             
                             // Determinar color de badge de score
@@ -380,6 +456,8 @@ export default function AdminPage() {
                    </table>
                 </div>
              )}
+          </>
+       )}
           </div>
         </div>
       )}
