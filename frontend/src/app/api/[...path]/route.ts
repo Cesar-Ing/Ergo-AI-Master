@@ -9,7 +9,13 @@ const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:8000';
  */
 async function handleRequest(request: Request, context: { params: Promise<{ path: string[] }> }) {
   const { path: pathSegments } = await context.params;
-  const path = pathSegments.join('/');
+  let path = pathSegments.join('/');
+  
+  // Evitar redirecciones 307/308 en el backend de FastAPI que convierten POST/PUT a GET
+  if (path === 'breaks' || path === 'config') {
+    path = `${path}/`;
+  }
+  
   const { search } = new URL(request.url);
   const targetUrl = `${BACKEND_URL}/${path}${search}`;
 
