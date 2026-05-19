@@ -26,6 +26,15 @@ export default function AdminPage() {
   const [typeFilter, setTypeFilter] = useState("all");
   const [riskFilter, setRiskFilter] = useState("all");
 
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [prescriptions, setPrescriptions] = useState<any[]>([]);
+  const [scheduleForm, setScheduleForm] = useState({
+    user_id: '',
+    title: '',
+    content: '',
+    type: 'exercise'
+  });
+
   useEffect(() => {
     setMounted(true);
     refreshUsers();
@@ -66,6 +75,22 @@ export default function AdminPage() {
       if (detailsData) setDetailedActivity(detailsData);
     } catch (e) {
       console.error("Error cargando logs detallados:", e);
+    }
+
+    // 5. Fetch Perfil de Usuario Logueado (para especialista_id)
+    try {
+      const me = await apiFetch('/users/me');
+      if (me) setCurrentUser(me);
+    } catch (e) {
+      console.error("Error cargando perfil logueado:", e);
+    }
+
+    // 6. Fetch Prescripciones / Actividades Programadas
+    try {
+      const pData = await apiFetch('/prescriptions/');
+      if (pData) setPrescriptions(pData);
+    } catch (e) {
+      console.error("Error cargando actividades programadas:", e);
     }
   };
 
@@ -139,6 +164,45 @@ export default function AdminPage() {
       refreshUsers();
     } catch (e) {
       alert("Error eliminando usuario");
+    }
+  };
+
+  const handleCreateSchedule = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!scheduleForm.user_id) {
+      alert("Por favor seleccione un colaborador");
+      return;
+    }
+    try {
+      await apiFetch('/prescriptions/', {
+        method: 'POST',
+        body: JSON.stringify({
+          specialist_id: currentUser?.id || 1,
+          user_id: parseInt(scheduleForm.user_id),
+          title: scheduleForm.title,
+          content: scheduleForm.content,
+          type: scheduleForm.type
+        })
+      });
+      alert("¡Sesión/Actividad programada exitosamente!");
+      setScheduleForm({ user_id: '', title: '', content: '', type: 'exercise' });
+      // Refrescar lista de prescripciones
+      const pData = await apiFetch('/prescriptions/');
+      if (pData) setPrescriptions(pData);
+    } catch (error: any) {
+      alert(error.message || "Error al programar la actividad");
+    }
+  };
+
+  const handleDeletePrescription = async (id: number) => {
+    if (!confirm("¿Está seguro de que desea cancelar esta actividad programada?")) return;
+    try {
+      await apiFetch(`/prescriptions/${id}`, { method: 'DELETE' });
+      // Refrescar lista de prescripciones
+      const pData = await apiFetch('/prescriptions/');
+      if (pData) setPrescriptions(pData);
+    } catch (e: any) {
+      alert(e.message || "Error al cancelar la actividad");
     }
   };
 
@@ -336,9 +400,9 @@ export default function AdminPage() {
       </div>
 
       <div className="flex p-2 bg-slate-200/40 dark:bg-white/5 rounded-3xl w-fit mx-auto border border-white/50 backdrop-blur-xl">
-        {["activity", "users", "calibration"].map(t => (
+        {["activity", "users", "prescriptions"].map(t => (
           <button key={t} onClick={() => setActiveTab(t)} className={`px-12 py-4 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-500 ${activeTab === t ? "bg-[#0B1B3D] text-white shadow-2xl scale-105" : "text-slate-400 dark:text-blue-200/40 hover:text-slate-800"}`}>
-            {t === 'activity' ? 'Actividad' : t === 'users' ? 'Cuentas' : 'Calibración IA'}
+            {t === 'activity' ? 'Actividad' : t === 'users' ? 'Cuentas' : 'Programar Actividades'}
           </button>
         ))}
       </div>
@@ -622,67 +686,147 @@ export default function AdminPage() {
         </div>
       )}
 
-      {activeTab === "calibration" && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-10 animate-in slide-in-from-bottom-10 duration-500">
-           <div className="bg-white dark:bg-[#0B1B3D]/50 p-12 rounded-[4rem] border border-slate-100 dark:border-white/5 shadow-xl">
-              <h3 className="text-2xl font-black text-[#0B1B3D] dark:text-white mb-10 flex items-center gap-4">
-                 <span className="text-3xl">⚙️</span> Umbrales de Postura
+      {activeTab === "prescriptions" && (
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 animate-in slide-in-from-bottom-10 duration-500">
+           {/* Formulario de Nueva Programación */}
+           <div className="lg:col-span-5 bg-white dark:bg-[#0B1B3D]/50 p-10 rounded-[3.5rem] border border-slate-100 dark:border-white/5 shadow-xl">
+              <h3 className="text-2xl font-black text-[#0B1B3D] dark:text-white mb-2 flex items-center gap-3">
+                 <span className="text-3xl">🗓️</span> Programar Actividad
               </h3>
-              <div className="space-y-12">
-                 {[
-                   { key: 'neck_threshold', label: 'Inclinación Cuello', min: 10, max: 45, unit: '°' },
-                   { key: 'back_threshold', label: 'Inclinación Espalda', min: 5, max: 30, unit: '°' },
-                 ].map(item => (
-                    <div key={item.key} className="space-y-4">
-                       <div className="flex justify-between items-center">
-                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{item.label}</label>
-                          <span className="text-2xl font-black text-indigo-600">{configs[item.key] || '0'}{item.unit}</span>
-                       </div>
-                       <input 
-                         type="range" 
-                         min={item.min} 
-                         max={item.max} 
-                         value={configs[item.key] || item.min} 
-                         onChange={(e) => saveConfig(item.key, e.target.value)}
-                         className="w-full h-2 bg-slate-100 dark:bg-white/10 rounded-lg appearance-none cursor-pointer accent-indigo-600"
-                       />
-                       <p className="text-[8px] font-bold text-slate-300">Menos es más sensible, más permite mayor inclinación.</p>
-                    </div>
-                 ))}
-              </div>
+              <p className="text-xs text-slate-400 dark:text-blue-200/40 font-bold mb-8 uppercase tracking-widest">
+                 Asigna ejercicios o pausas activas personalizadas a tus colaboradores.
+              </p>
+
+              <form onSubmit={handleCreateSchedule} className="space-y-6">
+                 <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-4">Seleccionar Colaborador</label>
+                    <select
+                      required
+                      value={scheduleForm.user_id}
+                      onChange={e => setScheduleForm({...scheduleForm, user_id: e.target.value})}
+                      className="w-full bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 rounded-2xl px-6 py-4 text-sm outline-none focus:ring-2 ring-indigo-500"
+                    >
+                      <option value="">-- Elige un Colaborador --</option>
+                      {users.filter(u => u.role !== 'admin').map(u => (
+                         <option key={u.id} value={u.id}>
+                            {u.full_name} ({u.department || 'General'})
+                         </option>
+                      ))}
+                    </select>
+                 </div>
+
+                 <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-4">Tipo de Actividad</label>
+                    <select
+                      required
+                      value={scheduleForm.type}
+                      onChange={e => setScheduleForm({...scheduleForm, type: e.target.value})}
+                      className="w-full bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 rounded-2xl px-6 py-4 text-sm outline-none focus:ring-2 ring-indigo-500"
+                    >
+                      <option value="exercise">🏋️ Ejercicio Activo</option>
+                      <option value="rest">⏱️ Pausa Activa Postural</option>
+                      <option value="equipment_adjustment">🖥️ Ajuste de Estación</option>
+                    </select>
+                 </div>
+
+                 <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-4">Título de la Actividad</label>
+                    <input
+                      required
+                      value={scheduleForm.title}
+                      onChange={e => setScheduleForm({...scheduleForm, title: e.target.value})}
+                      placeholder="Ej. Estiramiento Cervical"
+                      className="w-full bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 rounded-2xl px-6 py-4 text-sm outline-none focus:ring-2 ring-indigo-500"
+                    />
+                 </div>
+
+                 <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-4">Instrucciones y Tiempos</label>
+                    <textarea
+                      required
+                      rows={4}
+                      value={scheduleForm.content}
+                      onChange={e => setScheduleForm({...scheduleForm, content: e.target.value})}
+                      placeholder="Ej. Realizar movimientos suaves de cuello lado a lado por 2 minutos. Repetir cada 2 horas."
+                      className="w-full bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 rounded-2xl px-6 py-4 text-sm outline-none focus:ring-2 ring-indigo-500 resize-none"
+                    />
+                 </div>
+
+                 <button
+                   type="submit"
+                   className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-black uppercase tracking-widest rounded-2xl shadow-xl shadow-indigo-600/10 hover:scale-[1.02] active:scale-95 transition-all"
+                 >
+                    🚀 ASIGNAR ACTIVIDAD
+                 </button>
+              </form>
            </div>
 
-           <div className="bg-[#0B1B3D] p-12 rounded-[4rem] text-white shadow-2xl relative overflow-hidden">
-              <h3 className="text-2xl font-black mb-10 flex items-center gap-4">
-                 <span className="text-3xl">🧠</span> Sensibilidad IA
-              </h3>
-              <div className="space-y-12 relative z-10">
-                 <div className="space-y-4">
-                    <div className="flex justify-between items-center">
-                       <label className="text-[10px] font-black text-blue-300 uppercase tracking-widest">Confianza Mínima</label>
-                       <span className="text-3xl font-black text-emerald-400">{Math.round(parseFloat(configs['sensitivity'] || '0.8') * 100)}%</span>
-                    </div>
-                    <input 
-                      type="range" 
-                      min="0.5" 
-                      max="0.95" 
-                      step="0.05"
-                      value={configs['sensitivity'] || '0.8'} 
-                      onChange={(e) => saveConfig('sensitivity', e.target.value)}
-                      className="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer accent-emerald-400"
-                    />
-                    <p className="text-[9px] font-bold text-blue-200/40 leading-relaxed">
-                       Ajusta el umbral de confianza del modelo PoseNet. Un valor alto requiere una detección perfecta para puntuar.
+           {/* Cronograma de Actividades Asignadas */}
+           <div className="lg:col-span-7 bg-white dark:bg-[#0B1B3D]/50 p-10 rounded-[3.5rem] border border-slate-100 dark:border-white/5 shadow-xl flex flex-col">
+              <div className="flex justify-between items-center mb-8">
+                 <div>
+                    <h3 className="text-2xl font-black text-[#0B1B3D] dark:text-white tracking-tight">Cronograma de Actividades</h3>
+                    <p className="text-xs text-slate-400 dark:text-blue-200/40 font-bold mt-1 uppercase tracking-widest">
+                       Monitoreo global de sesiones y pausas vigentes.
                     </p>
                  </div>
-
-                 <div className="p-8 bg-white/5 rounded-3xl border border-white/10 backdrop-blur-xl">
-                    <p className="text-xs font-bold leading-relaxed opacity-70">
-                       Los cambios realizados aquí afectan globalmente la precisión del cálculo del Score en tiempo real para todos los usuarios de la red ErgoIA.
-                    </p>
+                 <div className="bg-[#0B1B3D] text-[10px] text-white font-black px-4 py-2 rounded-xl">
+                    {prescriptions.length} ACTIVAS
                  </div>
               </div>
-              <div className="absolute -right-20 -bottom-20 w-80 h-80 bg-indigo-500/20 blur-[100px] rounded-full"></div>
+
+              {prescriptions.length === 0 ? (
+                 <div className="flex-1 flex flex-col items-center justify-center py-20 text-center space-y-4">
+                    <span className="text-5xl">🧘‍♂️</span>
+                    <p className="text-slate-400 dark:text-blue-200/30 font-black uppercase text-xs tracking-widest">No hay actividades programadas vigentes</p>
+                    <p className="text-xs text-slate-300 max-w-xs">Usa el formulario de la izquierda para programar la primera rutina ergonómica.</p>
+                 </div>
+              ) : (
+                 <div className="space-y-6 max-h-[550px] overflow-y-auto pr-4 scrollbar-thin">
+                    {prescriptions.map(p => {
+                       const assignedUser = users.find(u => u.id === p.user_id);
+                       
+                       let badgeClass = "";
+                       let typeLabel = "";
+                       if (p.type === 'exercise') {
+                          badgeClass = "bg-emerald-500/10 border border-emerald-500/20 text-emerald-500";
+                          typeLabel = "🏋️ Ejercicio";
+                       } else if (p.type === 'rest') {
+                          badgeClass = "bg-amber-500/10 border border-amber-500/20 text-amber-500";
+                          typeLabel = "⏱️ Pausa Activa";
+                       } else {
+                          badgeClass = "bg-sky-500/10 border border-sky-500/20 text-sky-500";
+                          typeLabel = "🖥️ Estación";
+                       }
+
+                       return (
+                          <div key={p.id} className="p-6 bg-slate-50 dark:bg-black/20 rounded-3xl border border-slate-100 dark:border-white/5 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 hover:scale-[1.01] transition-all duration-300">
+                             <div className="space-y-3 flex-1">
+                                <div className="flex flex-wrap items-center gap-3">
+                                   <span className={`px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider ${badgeClass}`}>
+                                      {typeLabel}
+                                   </span>
+                                   <span className="text-xs text-slate-400 dark:text-blue-200/30 font-bold">•</span>
+                                   <p className="text-xs text-slate-400 dark:text-blue-200/60 font-black uppercase">
+                                      👤 {assignedUser ? assignedUser.full_name : `Usuario #${p.user_id}`}
+                                   </p>
+                                </div>
+                                <h4 className="text-lg font-black text-[#0B1B3D] dark:text-white tracking-tight">{p.title}</h4>
+                                <p className="text-xs text-slate-500 dark:text-slate-300 leading-relaxed font-semibold bg-white dark:bg-white/5 p-4 rounded-2xl border border-slate-100 dark:border-white/5">
+                                   {p.content}
+                                </p>
+                             </div>
+                             <button
+                               onClick={() => handleDeletePrescription(p.id)}
+                               className="px-5 py-2.5 bg-red-500/15 border border-red-500/30 hover:bg-red-500 hover:text-white text-red-500 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all"
+                             >
+                                🗑️ Cancelar
+                             </button>
+                          </div>
+                       );
+                    })}
+                 </div>
+              )}
            </div>
         </div>
       )}

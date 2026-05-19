@@ -39,3 +39,16 @@ def create_prescription(data: PrescriptionCreate, db: Session = Depends(get_db))
 @router.get("/user/{user_id}", response_model=List[PrescriptionResponse])
 def get_user_prescriptions(user_id: int, db: Session = Depends(get_db)):
     return db.query(Prescription).filter(Prescription.user_id == user_id).all()
+
+@router.get("/", response_model=List[PrescriptionResponse])
+def list_prescriptions(db: Session = Depends(get_db)):
+    return db.query(Prescription).order_by(Prescription.id.desc()).all()
+
+@router.delete("/{prescription_id}")
+def delete_prescription(prescription_id: int, db: Session = Depends(get_db)):
+    db_p = db.query(Prescription).filter(Prescription.id == prescription_id).first()
+    if not db_p:
+        raise HTTPException(status_code=404, detail="Actividad programada no encontrada")
+    db.delete(db_p)
+    db.commit()
+    return {"success": True, "message": "Actividad programada eliminada correctamente"}
