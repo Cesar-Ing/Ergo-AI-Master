@@ -73,6 +73,10 @@ export default function DashboardPage() {
   const [suggestion, setSuggestion] = useState("Listo para analizar.");
 
   const [breakDuration, setBreakDuration] = useState(5);
+  const [inputHours, setInputHours] = useState(0);
+  const [inputMinutes, setInputMinutes] = useState(5);
+  const [inputSeconds, setInputSeconds] = useState(0);
+  const [sessionDurationSeconds, setSessionDurationSeconds] = useState(300);
   const [breakTimeLeft, setBreakTimeLeft] = useState(0);
   const [isBreakActive, setIsBreakActive] = useState(false);
   const isBreakActiveRef = useRef(false);
@@ -459,7 +463,7 @@ export default function DashboardPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           user_id: session.id, 
-          duration_seconds: breakDuration * 60, 
+          duration_seconds: sessionDurationSeconds, 
           score: finalScore, 
           metrics: { avg_score: finalScore } 
         })
@@ -474,7 +478,7 @@ export default function DashboardPage() {
           setBreaks(sorted);
           window.dispatchEvent(new CustomEvent('streakUpdated', { detail: sorted }));
         }
-        setLastSessionData({ score: finalScore, suggestion, duration: breakDuration });
+        setLastSessionData({ score: finalScore, suggestion, duration: Math.round(sessionDurationSeconds / 60) });
         setShowResultModal(true);
         // Alerta de confirmación para el usuario
         alert("✅ Sesión guardada exitosamente en tu historial.");
@@ -793,67 +797,70 @@ export default function DashboardPage() {
                ) : !isBreakActive ? (
                   <div className="space-y-6">
                      {/* Tarjeta 1: Monitoreo de Postura */}
-                     <div className="bg-white dark:bg-[#0B1B3D]/50 p-8 rounded-[2.5rem] border border-slate-100 dark:border-white/5 shadow-xl text-center">
-                        <span className="text-[8px] font-black text-blue-400 uppercase tracking-[0.2em] block mb-2">MONITOREO ACTIVO</span>
-                        <h3 className="text-xl font-black text-[#0B1B3D] dark:text-white mb-6">Análisis de Postura</h3>
-                        <div className="space-y-4 mb-6 text-left">
-                           <div className="space-y-2">
-                              <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Duración (Minutos)</label>
-                              <input 
-                                type="number" 
-                                min="1" 
-                                max="120" 
-                                value={isNaN(breakDuration) ? "" : breakDuration} 
-                                onChange={e => {
-                                  const val = parseInt(e.target.value);
-                                  setBreakDuration(isNaN(val) ? 1 : Math.max(1, val));
-                                }} 
-                                className="w-full h-12 px-6 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/5 font-black text-lg text-center focus:border-emerald-500 outline-none transition-all shadow-inner" 
-                              />
-                           </div>
-                        </div>
-                        <Button onClick={()=>{ setIsBreakActive(true); isBreakActiveRef.current=true; setIsCameraActive(true); setIsCameraLoading(true); setBreakTimeLeft(breakDuration*60); sessionScoresRef.current=[]; setTimeout(startIA, 1000); }} className="w-full h-14 bg-[#0B1B3D] hover:bg-[#1C305C] text-white font-black text-sm rounded-[1.5rem] shadow-xl transition-all hover:scale-[1.02]">ACTIVAR ANÁLISIS</Button>
-                     </div>
-
-                     {/* Tarjeta 2: Ejercicios de Rehabilitación */}
-                     <div className="bg-white dark:bg-[#0B1B3D]/50 p-8 rounded-[2.5rem] border border-slate-100 dark:border-white/5 shadow-xl text-center">
-                        <span className="text-[8px] font-black text-emerald-500 uppercase tracking-[0.2em] block mb-2">REHABILITACIÓN DIRECTA</span>
-                        <h3 className="text-xl font-black text-[#0B1B3D] dark:text-white mb-6">Ejercicios Correctivos</h3>
-                        <div className="space-y-4 mb-6 text-left">
-                           <div className="space-y-2">
-                              <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Seleccionar Ejercicio</label>
-                              <select 
-                                onChange={e => {
-                                  const selectedId = e.target.value;
-                                  setSelectedExercise((EXERCISES as any)[selectedId]);
-                                }}
-                                className="w-full h-12 px-4 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/5 font-bold text-xs text-slate-600 dark:text-white focus:border-emerald-500 outline-none transition-all"
-                              >
-                                <option value="neck_stretch">🧘 Estiramiento Lateral de Cuello</option>
-                                <option value="back_stretch">⚡ Estiramiento de Espalda Alta</option>
-                                <option value="shoulder_shrug">💪 Rotación de Hombros</option>
-                              </select>
-                           </div>
-                        </div>
+                      <div className="bg-white dark:bg-[#0B1B3D]/50 p-8 rounded-[2.5rem] border border-slate-100 dark:border-white/5 shadow-xl text-center">
+                         <span className="text-[8px] font-black text-blue-400 uppercase tracking-[0.2em] block mb-2">MONITOREO ACTIVO</span>
+                         <h3 className="text-xl font-black text-[#0B1B3D] dark:text-white mb-6">Análisis de Postura</h3>
+                         <div className="space-y-4 mb-6 text-left">
+                            <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block text-center mb-1">Duración del Análisis</label>
+                            <div className="grid grid-cols-3 gap-3">
+                               <div className="space-y-1">
+                                  <span className="text-[8px] font-bold text-slate-400 dark:text-zinc-500 uppercase tracking-wider block text-center">Horas</span>
+                                  <input 
+                                    type="number" 
+                                    min="0" 
+                                    max="23" 
+                                    value={inputHours} 
+                                    onChange={e => {
+                                      const val = parseInt(e.target.value);
+                                      setInputHours(isNaN(val) ? 0 : Math.min(23, Math.max(0, val)));
+                                    }} 
+                                    className="w-full h-12 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/5 font-black text-base text-center focus:border-emerald-500 outline-none transition-all shadow-inner" 
+                                  />
+                               </div>
+                               <div className="space-y-1">
+                                  <span className="text-[8px] font-bold text-slate-400 dark:text-zinc-500 uppercase tracking-wider block text-center">Minutos</span>
+                                  <input 
+                                    type="number" 
+                                    min="0" 
+                                    max="59" 
+                                    value={inputMinutes} 
+                                    onChange={e => {
+                                      const val = parseInt(e.target.value);
+                                      setInputMinutes(isNaN(val) ? 0 : Math.min(59, Math.max(0, val)));
+                                    }} 
+                                    className="w-full h-12 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/5 font-black text-base text-center focus:border-emerald-500 outline-none transition-all shadow-inner" 
+                                  />
+                               </div>
+                               <div className="space-y-1">
+                                  <span className="text-[8px] font-bold text-slate-400 dark:text-zinc-500 uppercase tracking-wider block text-center">Segundos</span>
+                                  <input 
+                                    type="number" 
+                                    min="0" 
+                                    max="59" 
+                                    value={inputSeconds} 
+                                    onChange={e => {
+                                      const val = parseInt(e.target.value);
+                                      setInputSeconds(isNaN(val) ? 0 : Math.min(59, Math.max(0, val)));
+                                    }} 
+                                    className="w-full h-12 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/5 font-black text-base text-center focus:border-emerald-500 outline-none transition-all shadow-inner" 
+                                  />
+                               </div>
+                            </div>
+                         </div>
                          <Button onClick={() => {
-                           setExerciseMode(true);
-                           if (!selectedExercise) {
-                             setSelectedExercise(EXERCISES.neck_stretch);
-                             setExerciseTimeLeft(EXERCISES.neck_stretch.duration_seconds);
-                           } else {
-                             setExerciseTimeLeft(selectedExercise.duration_seconds || 30);
-                           }
-                           setExerciseProgress(0);
-                           setExerciseCompleted(false);
-                           exerciseProgressRef.current = 0;
-                           exerciseCompletedRef.current = false;
-                           
+                           const totalSecs = (inputHours * 3600) + (inputMinutes * 60) + inputSeconds;
+                           const finalSecs = totalSecs > 0 ? totalSecs : 10;
+                           setSessionDurationSeconds(finalSecs);
+                           setIsBreakActive(true);
+                           isBreakActiveRef.current = true;
                            setIsCameraActive(true);
                            setIsCameraLoading(true);
+                           setBreakTimeLeft(finalSecs);
+                           sessionScoresRef.current = [];
                            setTimeout(startIA, 1000);
-                         }} className="w-full h-14 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-sm rounded-[1.5rem] shadow-xl transition-all hover:scale-[1.02]">INICIAR EJERCICIO IA</Button>
-                     </div>
-                  </div>
+                         }} className="w-full h-14 bg-[#0B1B3D] hover:bg-[#1C305C] text-white font-black text-sm rounded-[1.5rem] shadow-xl transition-all hover:scale-[1.02]">ACTIVAR ANÁLISIS</Button>
+                      </div>
+                   </div>
                ) : (
                   <div className={`p-12 rounded-[3.5rem] text-white shadow-2xl text-center animate-in zoom-in duration-500 relative overflow-hidden transition-colors duration-500 ${
                     biometricState === 'optimal' ? 'bg-emerald-600' : 
