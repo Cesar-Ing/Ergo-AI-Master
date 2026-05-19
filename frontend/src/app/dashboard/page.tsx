@@ -44,6 +44,13 @@ const EXERCISES = {
   }
 };
 
+const formatTime = (seconds: number) => {
+  const h = Math.floor(seconds / 3600).toString().padStart(2, '0');
+  const m = Math.floor((seconds % 3600) / 60).toString().padStart(2, '0');
+  const s = (seconds % 60).toString().padStart(2, '0');
+  return `${h}:${m}:${s}`;
+};
+
 export default function DashboardPage() {
   const [mounted, setMounted] = useState(false);
   const [activeTab, setActiveTab] = useState<'calendar' | 'camera' | 'profile'>('calendar');
@@ -676,9 +683,7 @@ export default function DashboardPage() {
                       <div className="absolute top-10 right-10 z-30 bg-[#0B1B3D]/90 backdrop-blur-xl px-8 py-4 rounded-[2rem] border border-blue-500/30 shadow-2xl text-center">
                          <span className="text-[8px] font-black text-blue-400 uppercase tracking-[0.3em] block mb-2">TIEMPO IA</span>
                          <span className="text-4xl font-mono font-black text-white">
-                           {Math.floor(breakTimeLeft / 3600).toString().padStart(2, '0')}:
-                           {Math.floor((breakTimeLeft % 3600) / 60).toString().padStart(2, '0')}:
-                           {(breakTimeLeft % 60).toString().padStart(2, '0')}
+                           {formatTime(breakTimeLeft)}
                          </span>
                       </div>
                    )}
@@ -688,7 +693,7 @@ export default function DashboardPage() {
                           <div className="absolute top-10 left-10 z-30 bg-[#0B1B3D]/90 backdrop-blur-xl px-8 py-4 rounded-[2rem] border border-emerald-500/30 shadow-2xl text-center">
                              <span className="text-[8px] font-black text-emerald-400 uppercase tracking-[0.3em] block mb-2">CRONÓMETRO IA</span>
                              <span className="text-4xl font-mono font-black text-white">
-                               00:00:{(exerciseTimeLeft % 60).toString().padStart(2, '0')}
+                               {formatTime(exerciseTimeLeft)}
                              </span>
                           </div>
                           <div className="absolute top-10 right-10 z-30 bg-[#0B1B3D]/90 backdrop-blur-xl px-8 py-4 rounded-[2rem] border border-emerald-500/30 shadow-2xl text-center">
@@ -722,7 +727,7 @@ export default function DashboardPage() {
                {exerciseMode ? (
                   <div className="bg-white dark:bg-[#0B1B3D]/50 p-10 rounded-[3rem] border border-slate-100 dark:border-white/5 shadow-xl text-center relative overflow-hidden">
                       <div className="absolute top-0 left-0 w-full h-2 bg-slate-100 dark:bg-white/5">
-                        <div className={`h-full transition-all duration-300 ${isPostureCorrect ? 'bg-emerald-500 shadow-[0_0_10px_#10B981]' : 'bg-amber-500 shadow-[0_0_10px_#F59E0B]'}`} style={{ width: `${exerciseProgress}%` }}></div>
+                        <div className={`h-full transition-all duration-300 ${isPostureCorrect ? 'bg-emerald-500 shadow-[0_0_10px_#10B981] animate-stripes' : 'bg-amber-500 shadow-[0_0_10px_#F59E0B]'}`} style={{ width: `${exerciseProgress}%` }}></div>
                       </div>
                      <span className="text-[9px] font-black text-emerald-500 uppercase tracking-[0.2em] block mb-2">Entrenador de Rehabilitación IA</span>
                      <h3 className="text-2xl font-black text-[#0B1B3D] dark:text-white mb-6">{selectedExercise?.title}</h3>
@@ -741,7 +746,7 @@ export default function DashboardPage() {
                           <div className="absolute right-3 top-3 text-[7px] font-black text-emerald-400 animate-pulse">REC • IA TIMER</div>
                           <p className="text-[7px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">RELOJ / CRONÓMETRO DE REHABILITACIÓN</p>
                           <div className="text-3xl font-mono font-black text-white tracking-widest my-1">
-                            00:00:{(exerciseTimeLeft % 60).toString().padStart(2, '0')}
+                            {formatTime(exerciseTimeLeft)}
                           </div>
                           <div className="w-full bg-slate-800 h-1 rounded-full overflow-hidden mt-3">
                             <div className="h-full bg-emerald-500 transition-all duration-300" style={{ width: `${(exerciseTimeLeft / (selectedExercise?.duration_seconds || 30)) * 100}%` }}></div>
@@ -756,7 +761,7 @@ export default function DashboardPage() {
                         <div className="w-full h-4 bg-slate-200 dark:bg-white/10 rounded-full overflow-hidden shadow-inner p-0.5">
                           <div className={`h-full rounded-full transition-all duration-200 ${
                             isPostureCorrect 
-                              ? 'bg-gradient-to-r from-emerald-500 to-teal-400 shadow-[0_0_15px_rgba(16,185,129,0.5)] animate-pulse' 
+                              ? 'bg-gradient-to-r from-emerald-500 to-teal-400 shadow-[0_0_15px_rgba(16,185,129,0.5)] animate-pulse animate-stripes' 
                               : 'bg-gradient-to-r from-amber-500 to-orange-400 shadow-[0_0_10px_rgba(245,158,11,0.3)]'
                           }`} style={{ width: `${exerciseProgress}%` }}></div>
                         </div>
@@ -959,9 +964,9 @@ export default function DashboardPage() {
                     setIsCameraActive(true);
                     setIsCameraLoading(true);
                     setTimeout(startIA, 1000);
-                  }}
-                   INICIAR REHABILITACIÓN IA ⚡
-                 </Button>
+                  }} className="flex-1 h-16 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-sm rounded-[1.8rem] transition-all shadow-lg hover:shadow-emerald-500/20">
+                    INICIAR REHABILITACIÓN IA ⚡
+                  </Button>
                  <Button onClick={() => setShowResultModal(false)} className="flex-1 h-16 bg-slate-100 hover:bg-slate-200 dark:bg-white/5 dark:hover:bg-white/10 text-slate-700 dark:text-white font-black text-sm rounded-[1.8rem] transition-all">
                    CERRAR
                  </Button>
