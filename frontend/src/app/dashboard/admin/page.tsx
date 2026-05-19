@@ -144,9 +144,68 @@ export default function AdminPage() {
     }
   };
 
-  const exportReport = () => {
-    window.print();
-    alert("Reporte exportado correctamente.");
+  const exportReport = async () => {
+    try {
+      const data = await apiFetch('/stats/activity-details');
+      if (!data || data.length === 0) {
+        alert("No hay registros de actividad para exportar.");
+        return;
+      }
+
+      const headers = [
+        "Colaborador",
+        "Correo Electronico",
+        "Departamento/Organizacion",
+        "Fecha",
+        "Hora",
+        "Tipo de Actividad",
+        "Detalle de Sesion",
+        "Duracion",
+        "Puntuacion ErgoIA"
+      ];
+
+      const rows = data.map((act: any) => {
+        const isExercise = act.metrics?.type === 'exercise';
+        const sessionDetail = act.metrics?.exerciseTitle || act.metrics?.postureState || (isExercise ? "Ejercicios sugeridos" : "Monitoreo Activo");
+        
+        const dateObj = new Date(act.start_time);
+        const formattedDate = dateObj.toLocaleDateString('es-ES');
+        const formattedTime = dateObj.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+        
+        return [
+          act.full_name,
+          act.email,
+          act.department || "General",
+          formattedDate,
+          formattedTime,
+          isExercise ? "Entrenamiento Correctivo" : "Análisis de Postura",
+          sessionDetail,
+          act.duration,
+          `${act.score}%`
+        ];
+      });
+
+      const csvContent = [
+        headers.join(","),
+        ...rows.map((row: any[]) => 
+          row.map(val => `"${String(val).replace(/"/g, '""')}"`).join(",")
+        )
+      ].join("\n");
+
+      const blob = new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      
+      const link = document.createElement("a");
+      link.setAttribute("href", url);
+      link.setAttribute("download", `Auditoria_Global_ErgoIA_${new Date().toISOString().split('T')[0]}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+    } catch (error) {
+      console.error("Error al exportar:", error);
+      alert("Ocurrió un error al exportar la auditoría global.");
+    }
   };
 
   if (!mounted) return null;
