@@ -940,6 +940,7 @@ export default function DashboardPage() {
                <div className="flex flex-col sm:flex-row gap-4">
                   <Button onClick={() => {
                     setShowResultModal(false);
+                    setActiveTab('camera');
                     setExerciseMode(true);
                     setSelectedExercise(recommendedEx);
                     setExerciseProgress(0);
