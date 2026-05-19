@@ -412,10 +412,10 @@ export default function DashboardPage() {
           setIsPostureCorrect(isCorrect);
 
           if (isCorrect) {
-            exerciseProgressRef.current = Math.min(100, exerciseProgressRef.current + 10);
+            exerciseProgressRef.current = Math.min(100, exerciseProgressRef.current + 20);
             setExerciseProgress(Math.round(exerciseProgressRef.current));
           } else {
-            exerciseProgressRef.current = Math.max(0, exerciseProgressRef.current - 10);
+            exerciseProgressRef.current = Math.max(0, exerciseProgressRef.current - 15);
             setExerciseProgress(Math.round(exerciseProgressRef.current));
           }
         }
@@ -495,7 +495,7 @@ export default function DashboardPage() {
 
   useEffect(() => {
     let timer: any;
-    if (exerciseMode && exerciseTimeLeft > 0) {
+    if (exerciseMode && exerciseTimeLeft > 0 && isPostureCorrect) {
       timerHasStartedRef.current = true;
       timer = setInterval(() => setExerciseTimeLeft(p => p - 1), 1000);
     } else if (exerciseMode && exerciseTimeLeft === 0 && timerHasStartedRef.current) {
@@ -503,7 +503,7 @@ export default function DashboardPage() {
       setExerciseCompleted(true);
     }
     return () => clearInterval(timer);
-  }, [exerciseMode, exerciseTimeLeft]);
+  }, [exerciseMode, exerciseTimeLeft, isPostureCorrect]);
 
   const postureBreaks = breaks.filter(b => b.metrics?.type !== 'exercise');
   const exerciseBreaks = breaks.filter(b => b.metrics?.type === 'exercise');
@@ -731,8 +731,15 @@ export default function DashboardPage() {
                           </div>
                         </div>
                         <p className="text-xs text-slate-400 leading-relaxed italic mb-4">{selectedExercise?.description}</p>
-                        <div className="flex items-center gap-2">
-                          <span className="text-[9px] bg-emerald-500/20 text-emerald-500 dark:text-emerald-400 font-black px-3 py-1 rounded-full uppercase tracking-wider">⏱️ Tiempo recomendado: {selectedExercise?.recommended_time}</span>
+                        <div className="mt-4 p-5 bg-[#0B1B3D] border border-emerald-500/20 rounded-2xl text-center shadow-md relative overflow-hidden">
+                          <div className="absolute right-3 top-3 text-[7px] font-black text-emerald-400 animate-pulse">REC • IA TIMER</div>
+                          <p className="text-[7px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">RELOJ / CRONÓMETRO DE REHABILITACIÓN</p>
+                          <div className="text-3xl font-mono font-black text-white tracking-widest my-1">
+                            00:00:{(exerciseTimeLeft % 60).toString().padStart(2, '0')}
+                          </div>
+                          <div className="w-full bg-slate-800 h-1 rounded-full overflow-hidden mt-3">
+                            <div className="h-full bg-emerald-500 transition-all duration-300" style={{ width: `${(exerciseTimeLeft / (selectedExercise?.duration_seconds || 30)) * 100}%` }}></div>
+                          </div>
                         </div>
                       </div>
 
