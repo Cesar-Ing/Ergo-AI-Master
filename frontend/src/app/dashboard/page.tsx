@@ -363,14 +363,18 @@ export default function DashboardPage() {
           let isCorrect = false;
           let guideMsg = "";
 
+          let realTimeScore = 0;
+
           if (currentEx.id === 'neck_stretch') {
             if (nose && leftS && rightS) {
               const shoulderWidth = Math.abs(leftS.x - rightS.x);
               const midX = (leftS.x + rightS.x) / 2;
               const neckOffset = Math.abs(nose.x - midX) / (shoulderWidth || 0.1);
+              
+              realTimeScore = Math.min(100, Math.max(0, Math.round((neckOffset / 0.24) * 100)));
+              isCorrect = realTimeScore >= 80;
 
-              if (neckOffset > 0.22) {
-                isCorrect = true;
+              if (isCorrect) {
                 guideMsg = "¡Excelente inclinación! Mantén la posición...";
               } else {
                 guideMsg = "Inclina tu cabeza suavemente hacia un hombro de manera lateral.";
@@ -381,8 +385,12 @@ export default function DashboardPage() {
           } 
           else if (currentEx.id === 'back_stretch') {
             if (leftW && rightW && leftS && rightS) {
-              if (leftW.y < leftS.y && rightW.y < rightS.y) {
-                isCorrect = true;
+              const leftScore = Math.min(50, Math.max(0, ((leftS.y - leftW.y) / 0.15) * 50));
+              const rightScore = Math.min(50, Math.max(0, ((rightS.y - rightW.y) / 0.15) * 50));
+              realTimeScore = Math.round(leftScore + rightScore);
+              isCorrect = realTimeScore >= 80;
+
+              if (isCorrect) {
                 guideMsg = "¡Perfecto! Brazos alzados. Sostén el estiramiento...";
               } else {
                 guideMsg = "Eleva ambos brazos bien alto sobre tu cabeza.";
@@ -397,8 +405,10 @@ export default function DashboardPage() {
               const midY = (leftS.y + rightS.y) / 2;
               const headHeight = Math.abs(nose.y - midY) / (shoulderWidth || 0.1);
 
-              if (headHeight < 0.38) {
-                isCorrect = true;
+              realTimeScore = Math.min(100, Math.max(0, Math.round(((0.45 - headHeight) / 0.12) * 100)));
+              isCorrect = realTimeScore >= 80;
+
+              if (isCorrect) {
                 guideMsg = "¡Hombros arriba! Sostén esa contracción...";
               } else {
                 guideMsg = "Eleva tus hombros hacia arriba con fuerza.";
@@ -410,14 +420,10 @@ export default function DashboardPage() {
 
           setSuggestion(guideMsg);
           setIsPostureCorrect(isCorrect);
-
-          if (isCorrect) {
-            exerciseProgressRef.current = Math.min(100, exerciseProgressRef.current + 20);
-            setExerciseProgress(Math.round(exerciseProgressRef.current));
-          } else {
-            exerciseProgressRef.current = Math.max(0, exerciseProgressRef.current - 15);
-            setExerciseProgress(Math.round(exerciseProgressRef.current));
-          }
+          
+          // Balanceo del porcentaje en tiempo real directo y dinámico!
+          exerciseProgressRef.current = realTimeScore;
+          setExerciseProgress(realTimeScore);
         }
       }
     });
@@ -666,7 +672,7 @@ export default function DashboardPage() {
                    {/* Capa de Cronómetro y Puntos */}
                    <div className="absolute inset-0 pointer-events-none border-[12px] border-[#0B1B3D]/30 z-10"></div>
                    
-                   {isBreakActive && !isCameraLoading && (
+                   {isBreakActive && (
                       <div className="absolute top-10 right-10 z-30 bg-[#0B1B3D]/90 backdrop-blur-xl px-8 py-4 rounded-[2rem] border border-blue-500/30 shadow-2xl text-center">
                          <span className="text-[8px] font-black text-blue-400 uppercase tracking-[0.3em] block mb-2">TIEMPO IA</span>
                          <span className="text-4xl font-mono font-black text-white">
@@ -677,7 +683,7 @@ export default function DashboardPage() {
                       </div>
                    )}
 
-                    {exerciseMode && !isCameraLoading && (
+                    {exerciseMode && (
                        <>
                           <div className="absolute top-10 left-10 z-30 bg-[#0B1B3D]/90 backdrop-blur-xl px-8 py-4 rounded-[2rem] border border-emerald-500/30 shadow-2xl text-center">
                              <span className="text-[8px] font-black text-emerald-400 uppercase tracking-[0.3em] block mb-2">CRONÓMETRO IA</span>
