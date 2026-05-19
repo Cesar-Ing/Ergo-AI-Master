@@ -42,6 +42,7 @@ const handler = NextAuth({
           const data = await response.json();
           (user as any).backendToken = data.access_token;
           (user as any).role = data.role || "user";
+          (user as any).backendUserId = data.id; // Guardamos el ID real de la BD
           
           const cookieStore = await cookies();
           cookieStore.set('ergoai_token', data.access_token, {
@@ -66,13 +67,13 @@ const handler = NextAuth({
       if (user) {
         token.backendToken = (user as any).backendToken;
         token.role = (user as any).role;
-        token.id = user.id; // Preservar ID
+        token.id = (user as any).backendUserId || user.id; // Usar el ID real de la BD
       }
       return token;
     },
     async session({ session, token }) {
       if (session.user) {
-        (session as any).id = token.sub || token.id; // El 'sub' es el ID estándar
+        (session as any).id = token.id; // Mapear el ID real de la BD
         (session as any).role = token.role;
         (session as any).backendToken = token.backendToken;
       }

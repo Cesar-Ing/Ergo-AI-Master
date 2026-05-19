@@ -136,6 +136,7 @@ def social_login(social_data: SocialLoginData, db: Session = Depends(get_db)):
     
     return {
         "success": True,
+        "id": user.id,
         "role": user.role,
         "email": user.email,
         "is_new": is_new,

@@ -34,9 +34,20 @@ function LoginContent() {
       
       if (backendToken) {
         localStorage.setItem("ergoai_token", backendToken);
+        localStorage.setItem("ergoai_user_id", String((session as any).id || ""));
         localStorage.setItem("ergoai_user_email", session.user?.email || "");
         localStorage.setItem("ergoai_user_role", role);
-        router.push("/dashboard");
+        
+        // Configurar la cookie HttpOnly en el navegador
+        fetch("/api/auth/set-token", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ token: backendToken })
+        }).then(() => {
+          router.push("/dashboard");
+        }).catch(() => {
+          router.push("/dashboard");
+        });
       }
     }
   }, [status, session, router]);
