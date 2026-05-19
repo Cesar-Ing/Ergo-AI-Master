@@ -21,7 +21,8 @@ const EXERCISES = {
     description: 'Inclina tu cabeza suavemente hacia la izquierda o derecha para liberar tensión cervical.',
     instruction: 'Inclina la cabeza lateralmente hasta sentir el estiramiento.',
     icon: '🧘',
-    recommended_time: '30 segundos'
+    recommended_time: '30 segundos',
+    duration_seconds: 30
   },
   back_stretch: {
     id: 'back_stretch',
@@ -29,7 +30,8 @@ const EXERCISES = {
     description: 'Eleva ambos brazos completamente por encima de tu cabeza para alinear tu columna.',
     instruction: 'Alza ambos brazos bien arriba sobre tu cabeza.',
     icon: '⚡',
-    recommended_time: '20 segundos'
+    recommended_time: '20 segundos',
+    duration_seconds: 20
   },
   shoulder_shrug: {
     id: 'shoulder_shrug',
@@ -37,7 +39,8 @@ const EXERCISES = {
     description: 'Eleva tus hombros hacia arriba (encogimiento) y mantenlos para liberar la carga del trapecio.',
     instruction: 'Eleva tus hombros hacia tus orejas con fuerza.',
     icon: '💪',
-    recommended_time: '15 segundos'
+    recommended_time: '15 segundos',
+    duration_seconds: 15
   }
 };
 
@@ -80,6 +83,7 @@ export default function DashboardPage() {
   const exerciseProgressRef = useRef(0);
   const exerciseCompletedRef = useRef(false);
   const [isPostureCorrect, setIsPostureCorrect] = useState(false);
+  const [exerciseTimeLeft, setExerciseTimeLeft] = useState(0);
 
   const [profileName, setProfileName] = useState("");
   const [profileEmail, setProfileEmail] = useState("");
@@ -493,6 +497,17 @@ export default function DashboardPage() {
     return () => clearInterval(timer);
   }, [isBreakActive, breakTimeLeft]);
 
+  useEffect(() => {
+    let timer: any;
+    if (exerciseMode && exerciseTimeLeft > 0) {
+      timer = setInterval(() => setExerciseTimeLeft(p => p - 1), 1000);
+    } else if (exerciseMode && exerciseTimeLeft === 0) {
+      exerciseCompletedRef.current = true;
+      setExerciseCompleted(true);
+    }
+    return () => clearInterval(timer);
+  }, [exerciseMode, exerciseTimeLeft]);
+
   const postureBreaks = breaks.filter(b => b.metrics?.type !== 'exercise');
   const exerciseBreaks = breaks.filter(b => b.metrics?.type === 'exercise');
 
@@ -665,12 +680,20 @@ export default function DashboardPage() {
                       </div>
                    )}
 
-                   {exerciseMode && !isCameraLoading && (
-                      <div className="absolute top-10 right-10 z-30 bg-[#0B1B3D]/90 backdrop-blur-xl px-8 py-4 rounded-[2rem] border border-emerald-500/30 shadow-2xl text-center">
-                         <span className="text-[8px] font-black text-emerald-400 uppercase tracking-[0.3em] block mb-2">PROGRESO REHAB</span>
-                         <span className="text-4xl font-mono font-black text-white">{exerciseProgress}%</span>
-                      </div>
-                   )}
+                    {exerciseMode && !isCameraLoading && (
+                       <>
+                          <div className="absolute top-10 left-10 z-30 bg-[#0B1B3D]/90 backdrop-blur-xl px-8 py-4 rounded-[2rem] border border-emerald-500/30 shadow-2xl text-center">
+                             <span className="text-[8px] font-black text-emerald-400 uppercase tracking-[0.3em] block mb-2">CRONÓMETRO IA</span>
+                             <span className="text-4xl font-mono font-black text-white">
+                               00:00:{(exerciseTimeLeft % 60).toString().padStart(2, '0')}
+                             </span>
+                          </div>
+                          <div className="absolute top-10 right-10 z-30 bg-[#0B1B3D]/90 backdrop-blur-xl px-8 py-4 rounded-[2rem] border border-emerald-500/30 shadow-2xl text-center">
+                             <span className="text-[8px] font-black text-emerald-400 uppercase tracking-[0.3em] block mb-2">PROGRESO REHAB</span>
+                             <span className="text-4xl font-mono font-black text-white">{exerciseProgress}%</span>
+                          </div>
+                       </>
+                    )}
                    
                    {isCameraLoading && (
                       <div className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-[#050f24]/90 backdrop-blur-sm">
@@ -797,20 +820,23 @@ export default function DashboardPage() {
                               </select>
                            </div>
                         </div>
-                        <Button onClick={() => {
-                          setExerciseMode(true);
-                          if (!selectedExercise) {
-                            setSelectedExercise(EXERCISES.neck_stretch);
-                          }
-                          setExerciseProgress(0);
-                          setExerciseCompleted(false);
-                          exerciseProgressRef.current = 0;
-                          exerciseCompletedRef.current = false;
-                          
-                          setIsCameraActive(true);
-                          setIsCameraLoading(true);
-                          setTimeout(startIA, 1000);
-                        }} className="w-full h-14 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-sm rounded-[1.5rem] shadow-xl transition-all hover:scale-[1.02]">INICIAR EJERCICIO IA</Button>
+                         <Button onClick={() => {
+                           setExerciseMode(true);
+                           if (!selectedExercise) {
+                             setSelectedExercise(EXERCISES.neck_stretch);
+                             setExerciseTimeLeft(EXERCISES.neck_stretch.duration_seconds);
+                           } else {
+                             setExerciseTimeLeft(selectedExercise.duration_seconds || 30);
+                           }
+                           setExerciseProgress(0);
+                           setExerciseCompleted(false);
+                           exerciseProgressRef.current = 0;
+                           exerciseCompletedRef.current = false;
+                           
+                           setIsCameraActive(true);
+                           setIsCameraLoading(true);
+                           setTimeout(startIA, 1000);
+                         }} className="w-full h-14 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-sm rounded-[1.5rem] shadow-xl transition-all hover:scale-[1.02]">INICIAR EJERCICIO IA</Button>
                      </div>
                   </div>
                ) : (
@@ -908,20 +934,21 @@ export default function DashboardPage() {
                </div>
 
                <div className="flex flex-col sm:flex-row gap-4">
-                 <Button onClick={() => {
-                   setShowResultModal(false);
-                   setExerciseMode(true);
-                   setSelectedExercise(recommendedEx);
-                   setExerciseProgress(0);
-                   setExerciseCompleted(false);
-                   exerciseProgressRef.current = 0;
-                   exerciseCompletedRef.current = false;
-                   
-                   // Encender la cámara e iniciar
-                   setIsCameraActive(true);
-                   setIsCameraLoading(true);
-                   setTimeout(startIA, 1000);
-                 }} className="flex-1 h-16 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-sm rounded-[1.8rem] shadow-xl hover:scale-105 transition-all flex items-center justify-center gap-2">
+                  <Button onClick={() => {
+                    setShowResultModal(false);
+                    setExerciseMode(true);
+                    setSelectedExercise(recommendedEx);
+                    setExerciseProgress(0);
+                    setExerciseCompleted(false);
+                    exerciseProgressRef.current = 0;
+                    exerciseCompletedRef.current = false;
+                    setExerciseTimeLeft(recommendedEx.duration_seconds || 30);
+                    
+                    // Encender la cámara e iniciar
+                    setIsCameraActive(true);
+                    setIsCameraLoading(true);
+                    setTimeout(startIA, 1000);
+                  }}
                    INICIAR REHABILITACIÓN IA ⚡
                  </Button>
                  <Button onClick={() => setShowResultModal(false)} className="flex-1 h-16 bg-slate-100 hover:bg-slate-200 dark:bg-white/5 dark:hover:bg-white/10 text-slate-700 dark:text-white font-black text-sm rounded-[1.8rem] transition-all">
