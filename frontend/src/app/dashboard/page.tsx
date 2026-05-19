@@ -518,6 +518,7 @@ export default function DashboardPage() {
     } else if (exerciseMode && exerciseTimeLeft === 0 && timerHasStartedRef.current) {
       exerciseCompletedRef.current = true;
       setExerciseCompleted(true);
+      saveAndExitExercise();
     }
     return () => clearInterval(timer);
   }, [exerciseMode, exerciseTimeLeft, isPostureCorrect]);
