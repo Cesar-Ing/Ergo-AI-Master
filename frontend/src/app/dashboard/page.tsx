@@ -248,7 +248,11 @@ export default function DashboardPage() {
         }
         if (gRes.ok) {
           const gData = await gRes.json();
-          setPediatricGuidelines(gData);
+          if (Array.isArray(gData) && gData.length > 0) {
+            setPediatricGuidelines(gData);
+          } else {
+            console.warn("Base de datos vacía o incorrecta, cargando respaldo ergonómico.");
+          }
         }
       } catch (e) { console.error(e); }
     };
