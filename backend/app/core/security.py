@@ -12,7 +12,12 @@ def get_password_hash(password: str) -> str:
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """Verifica si la contraseña ingresada coincide con el hash guardado."""
-    return pwd_context.verify(plain_password, hashed_password)
+    try:
+        if not hashed_password or not (hashed_password.startswith("$2b$") or hashed_password.startswith("$2a$")):
+            return False
+        return pwd_context.verify(plain_password, hashed_password)
+    except Exception:
+        return False
 
 def create_access_token(data: dict, expires_delta: timedelta = None):
     """Crea el token JWT para el login seguro."""
